@@ -31,6 +31,7 @@ size_t piece_length = 18;	/* 2^18 = 256kb by default */
 char *announce_url = NULL;	/* announce url */
 char *torrent_name = NULL;	/* name of the torrent (name of directory) */
 char *metainfo_file_path;	/* absolute path to the metainfo file */
+char *web_seed_url = NULL;	/* web seed URL */
 char *comment = NULL;		/* optional comment to add to the metainfo */
 int target_is_directory = 0;	/* target is a directory not just a single file */
 int no_creation_date = 0;	/* don't write the creation date */

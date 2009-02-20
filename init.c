@@ -219,6 +219,7 @@ static void print_help()
 	  "                          default is <name>.torrent\n"
 	  "-p, --private           : set the private flag\n"
 	  "-v, --verbose           : be verbose\n"
+	  "-w, --web-seed=<url>    : add web seed\n"
 	  "\nPlease send bug reports, patches, feature requests, praise and\n"
 	  "general gossip about the program to: esmil@mailme.dk\n");
 #else
@@ -237,6 +238,7 @@ static void print_help()
 	  "                 default is <name>.torrent\n"
 	  "-p             : set the private flag\n"
 	  "-v             : be verbose\n"
+	  "-w <url>       : add web seed\n"
 	  "\nPlease send bug reports, patches, feature requests, praise and\n"
 	  "general gossip about the program to: esmil@mailme.dk\n");
 #endif
@@ -261,16 +263,17 @@ void init(int argc, char *argv[])
 		{"output", 1, NULL, 'o'},
 		{"private", 0, NULL, 'p'},
 		{"verbose", 0, NULL, 'v'},
+		{"web-seed", 1, NULL, 'w'},
 		{NULL, 0, NULL, 0}
 	};
 #endif
 
 	/* now parse the command line options given */
 #ifndef NO_LONG_OPTIONS
-	while ((c = getopt_long(argc, argv, "a:c:dhl:n:o:pv",
+	while ((c = getopt_long(argc, argv, "a:c:dhl:n:o:pvw:",
 				long_options, NULL)) != -1) {
 #else
-	while ((c = getopt(argc, argv, "a:c:dhl:n:o:pv")) != -1) {
+	while ((c = getopt(argc, argv, "a:c:dhl:n:o:pvw:")) != -1) {
 #endif
 		switch (c) {
 		case 'a':
@@ -299,6 +302,9 @@ void init(int argc, char *argv[])
 			break;
 		case 'v':
 			verbose = 1;
+			break;
+		case 'w':
+			web_seed_url = optarg;
 			break;
 		case '?':
 			fprintf(stderr, "Use -h for help.\n");
@@ -359,11 +365,18 @@ void init(int argc, char *argv[])
 		else
 			printf("yes\n");
 
+		printf("  Web Seed URL: ");
+		if (web_seed_url == NULL)
+			printf("none\n");
+		else
+			printf("%s\n", web_seed_url);
+
 		printf("  Comment:      ");
 		if (comment == NULL)
 			printf("none\n\n");
 		else
 			printf("\"%s\"\n\n", comment);
+
 	}
 
 

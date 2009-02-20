@@ -120,8 +120,16 @@ void write_metainfo(FILE * file, unsigned char *hash_string)
 	if (private)
 		fprintf(file, "7:privatei1e");
 
-	/* now end the info section and the root dictionary */
-	fprintf(file, "ee");
+	/* end the info section */
+	fprintf(file, "e");
+
+	/* add url-list if one is specified */
+	if (web_seed_url != NULL)
+		fprintf(file, "8:url-list%zu:%s",
+				strlen(web_seed_url), web_seed_url);
+
+	/* end the root dictionary */
+	fprintf(file, "e");
 
 	/* let the user know we're done already */
 	printf("done.\n");
