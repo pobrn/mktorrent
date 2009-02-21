@@ -63,7 +63,7 @@ static FILE *open_file()
 		       S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1) {
 		fprintf(stderr, "error: couldn't create %s for writing, "
 			"perhaps it is already there.\n", metainfo_file_path);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	/* create the stream from this filedescriptor */
@@ -71,7 +71,7 @@ static FILE *open_file()
 		fprintf(stderr,
 			"error: couldn't create stream for file %s.",
 			metainfo_file_path);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	return stream;
@@ -85,7 +85,7 @@ static void close_file(FILE *file)
 	/* close the metainfo file */
 	if (fclose(file)) {
 		fprintf(stderr, "error: couldn't close stream.");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 }
 
@@ -113,5 +113,5 @@ int main(int argc, char *argv[])
 	close_file(file);
 
 	/* yeih! everything seemed to go as planned */
-	return 0;
+	return EXIT_SUCCESS;
 }

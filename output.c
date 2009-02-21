@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
-#include <stdlib.h>		/* exit() */
+#include <stdlib.h>		/* off_t etc. */
 #include <stdio.h>		/* printf() etc. */
 #include <string.h>		/* strlen() etc. */
 #include <time.h>		/* time() */
@@ -42,8 +42,8 @@ static void write_file_list(FILE *file)
 		/* the file list contains a dictionary for every file
 		   with entries for the length and path
 		   write the length first */
-		fprintf(file, "d6:lengthi%ue4:pathl",
-			(unsigned) p->size);
+		fprintf(file, "d6:lengthi%llue4:pathl",
+			(unsigned long long) p->size);
 		/* the file path is written as a list of subdirectories
 		   and the last entry is the filename
 		   sorry this code is even uglier than the rest */
@@ -97,7 +97,7 @@ void write_metainfo(FILE *file, unsigned char *hash_string)
 	/* add the creation date */
 	if (!no_creation_date)
 		fprintf(file, "13:creation datei%ue",
-			(unsigned) time(NULL));
+			(unsigned int) time(NULL));
 
 	/* now here comes the info section
 	   it is yet another dictionary */
@@ -105,8 +105,8 @@ void write_metainfo(FILE *file, unsigned char *hash_string)
 	/* first entry is either 'length', which specifies the length of a
 	   single file torrent, or a list of files and their respective sizes */
 	if (!target_is_directory)
-		fprintf(file, "6:lengthi%ue",
-				(unsigned) file_list->size);
+		fprintf(file, "6:lengthi%llue",
+				(unsigned long long) file_list->size);
 	else
 		write_file_list(file);
 

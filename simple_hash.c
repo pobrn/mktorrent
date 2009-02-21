@@ -62,7 +62,7 @@ unsigned char *make_hash()
 			fprintf(stderr,
 				"error: couldn't open %s for reading.\n",
 				p->path);
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 		printf("Hashing %s.\n", p->path);
 		fflush(stdout);
@@ -85,7 +85,7 @@ unsigned char *make_hash()
 		if (close(fd)) {
 			fprintf(stderr, "error: failed to close %s.",
 				p->path);
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 	}
 
@@ -97,7 +97,7 @@ unsigned char *make_hash()
 	if (counter != size) {
 		fprintf(stderr, "error: counted %llu bytes, "
 			"but hashed %llu bytes.\n", size, counter);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 #endif
 

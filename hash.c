@@ -107,7 +107,7 @@ static void *file_reader(void *data)
 			fprintf(stderr,
 				"error: couldn't open %s for reading.\n",
 				p->path);
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 
 		/* fill the buffer with the contents of the file and deliver
@@ -131,7 +131,7 @@ static void *file_reader(void *data)
 		if (close(fd)) {
 			fprintf(stderr, "error: failed to close %s.",
 				p->path);
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 	}
 
@@ -146,7 +146,7 @@ static void *file_reader(void *data)
 	if (counter != size) {
 		fprintf(stderr, "error: counted %llu bytes, "
 			"but hashed %llu bytes.\n", size, counter);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 #endif
 

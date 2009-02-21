@@ -92,7 +92,7 @@ static int is_dir(char *target)
 	/* stat the target */
 	if (stat(target, &s)) {
 		fprintf(stderr, "error: cannot stat %s.\n", target);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	/* if it is a directory, just return 1 */
@@ -104,7 +104,7 @@ static int is_dir(char *target)
 		fprintf(stderr,
 			"error: %s isn't a directory og regular file.\n",
 			target);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	/* since we know the torrent is just a single file and we've
@@ -183,7 +183,7 @@ static void read_dir(const char *dir)
 	if (chdir(dir)) {
 		fprintf(stderr, "error: cannot change directory to %s.\n",
 			dir);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	/* now process all the files in it
@@ -192,7 +192,7 @@ static void read_dir(const char *dir)
 	if (ftw("./", process_node, MAX_OPENFD)) {
 		fprintf(stderr,
 			"error: ftw() failed, this shouldn't happen.\n");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 }
 
@@ -213,7 +213,7 @@ static void print_help()
 	       "-o, --output=<filename> : set the path and filename of the created file\n"
 	       "                          default is <name>.torrent\n"
 	       "-p, --piece-length=<n>  : set the piece length to 2^n bytes,\n"
-	       "                          default is 18, that is 2^18 = 265kb.\n"
+	       "                          default is 18, that is 2^18 = 256kb.\n"
 	       "-v, --verbose           : be verbose\n"
 	       "\nPlease send bug reports, patches, feature requests, praise and\n"
 	       "general gossip about the program to: esmil@imf.au.dk\n");
@@ -229,7 +229,7 @@ static void print_help()
 	       "-o <filename>  : set the path and filename of the created file\n"
 	       "                 default is <name>.torrent\n"
 	       "-p <n>         : set the piece length to 2^n bytes,\n"
-	       "                 default is 18, that is 2^18 = 265kb.\n"
+	       "                 default is 18, that is 2^18 = 256kb.\n"
 	       "-v             : be verbose\n"
 	       "\nPlease send bug reports, patches, feature requests, praise and\n"
 	       "general gossip about the program to: esmil@imf.au.dk\n");
@@ -249,7 +249,7 @@ void init(int argc, char *argv[])
 		{"announce", 1, NULL, 'a'},
 		{"comment", 1, NULL, 'c'},
 		{"no-date", 0, NULL, 'd'},
-		{"help", 1, NULL, 'h'},
+		{"help", 0, NULL, 'h'},
 		{"name", 1, NULL, 'n'},
 		{"output", 1, NULL, 'o'},
 		{"piece-length", 1, NULL, 'p'},
@@ -277,7 +277,7 @@ void init(int argc, char *argv[])
 			break;
 		case 'h':
 			print_help();
-			exit(0);
+			exit(EXIT_SUCCESS);
 		case 'n':
 			torrent_name = optarg;
 			break;
@@ -293,7 +293,7 @@ void init(int argc, char *argv[])
 		case '?':
 			fprintf(stderr, "error: wrong arguments given, "
 				"use -h for help.\n");
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 	}
 
@@ -302,7 +302,7 @@ void init(int argc, char *argv[])
 	if (piece_length < 15 || piece_length > 21) {
 		fprintf(stderr, "error: piece length must be a number between "
 				"15 and 21.\n");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	piece_length = 1 << piece_length;
 
@@ -311,14 +311,14 @@ void init(int argc, char *argv[])
 	if (announce_url == NULL) {
 		fprintf(stderr, "error: must specify an announce url, "
 			"use -h for help.\n");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	/* ..and a file or directory from which to create the torrent */
 	if (optind >= argc) {
 		fprintf(stderr, "error: must specify the contents, "
 			"use -h for help\n");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	/* if the torrent name isn't set use the basename of the target */
