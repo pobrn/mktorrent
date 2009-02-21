@@ -29,9 +29,10 @@ extern size_t piece_length;	/* piece length */
 extern char *announce_url;	/* announce URL */
 extern char *comment;		/* optional comment to add to the metainfo */
 extern char *torrent_name;	/* name of the torrent (name of directory) */
-extern char *metainfo_file_path;/* absolute path to the metainfo file */
+extern char *metainfo_file_path;	/* absolute path to the metainfo file */
 extern int target_is_directory;	/* target is a directory not just a single file */
 extern int no_creation_date;	/* don't write the creation date */
+extern int private;		/* set the private flag */
 extern int verbose;		/* be verbose */
 
 /* information calculated by read_dir() */

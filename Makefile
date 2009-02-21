@@ -58,7 +58,7 @@ PREFIX  ?= /usr/local
 #-------------Nothing interesting below this line-----------------------------
 
 program := mktorrent
-version := 0.3
+version := 0.4
 
 HEADERS  = mktorrent.h
 SRCS    := init.c hash.c output.c main.c

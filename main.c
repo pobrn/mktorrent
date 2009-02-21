@@ -33,6 +33,7 @@ char *metainfo_file_path;	/* absolute path to the metainfo file */
 char *comment = NULL;		/* optional comment to add to the metainfo */
 int target_is_directory = 0;	/* target is a directory not just a single file */
 int no_creation_date = 0;	/* don't write the creation date */
+int private = 0;		/* set the private flag */
 int verbose = 0;		/* be verbose */
 
 /* information calculated by read_dir() */
@@ -47,7 +48,7 @@ extern void init(int argc, char *argv[]);
 extern unsigned char *make_hash();
 
 /* output.c */
-extern void write_metainfo(FILE *file, unsigned char *hash_string);
+extern void write_metainfo(FILE * file, unsigned char *hash_string);
 
 /*
  * create and open the metainfo file for writing and create a stream for it
@@ -62,7 +63,8 @@ static FILE *open_file()
 	if ((fd = open(metainfo_file_path, O_WRONLY | O_CREAT | O_EXCL,
 		       S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1) {
 		fprintf(stderr, "error: couldn't create %s for writing, "
-			"perhaps it is already there.\n", metainfo_file_path);
+			"perhaps it is already there.\n",
+			metainfo_file_path);
 		exit(EXIT_FAILURE);
 	}
 
@@ -80,7 +82,7 @@ static FILE *open_file()
 /*
  * close the metainfo file
  */
-static void close_file(FILE *file)
+static void close_file(FILE * file)
 {
 	/* close the metainfo file */
 	if (fclose(file)) {

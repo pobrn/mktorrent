@@ -20,7 +20,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <stdio.h>		/* printf() etc. */
 #include <sys/stat.h>		/* the stat structure */
 #include <unistd.h>		/* getopt(), getcwd() */
-#include <string.h>		/* strlen(), strncpy() */
+#include <string.h>		/* strcmp(), strlen(), strncpy() */
 #include <ftw.h>		/* ftw() */
 #include <libgen.h>		/* basename() */
 #ifndef NO_LONG_OPTIONS
@@ -37,8 +37,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  * returns the absolute path to the metainfo file
  * if file_path is NULL use <torrent name>.torrent as file name
  */
-static char *get_absolute_file_path(char *file_path,
-					char *torrent_name)
+static char *get_absolute_file_path(char *file_path, char *torrent_name)
 {
 	char *string;		/* string to return */
 	size_t length = 32;	/* length of the string */
@@ -73,7 +72,8 @@ static char *get_absolute_file_path(char *file_path,
 	} else {
 		/* otherwise append the torrent path to the working dir */
 		string =
-		    realloc(string, length + strlen(metainfo_file_path) + 2);
+		    realloc(string,
+			    length + strlen(metainfo_file_path) + 2);
 		sprintf(string + length, "/%s", metainfo_file_path);
 	}
 
@@ -87,7 +87,7 @@ static char *get_absolute_file_path(char *file_path,
  */
 static int is_dir(char *target)
 {
-	struct stat s;	/* stat structure for stat() to fill */
+	struct stat s;		/* stat structure for stat() to fill */
 
 	/* stat the target */
 	if (stat(target, &s)) {
@@ -202,37 +202,41 @@ static void read_dir(const char *dir)
 static void print_help()
 {
 #ifndef NO_LONG_OPTIONS
-	printf("Usage: mktorrent [OPTIONS] <target directory or filename>\n\n"
-	       "Options:\n"
-	       "-a, --announce=<url>    : specify the full announce url, required.\n"
-	       "-c, --comment=<comment> : add an optional comment to the metainfo\n"
-	       "-d, --no-date           : don't write the creation date\n"
-	       "-h, --help              : show this help screen\n"
-	       "-n, --name=<name>       : set the name of the torrent,\n"
-	       "                          default is the basename of the target\n"
-	       "-o, --output=<filename> : set the path and filename of the created file\n"
-	       "                          default is <name>.torrent\n"
-	       "-p, --piece-length=<n>  : set the piece length to 2^n bytes,\n"
-	       "                          default is 18, that is 2^18 = 256kb.\n"
-	       "-v, --verbose           : be verbose\n"
-	       "\nPlease send bug reports, patches, feature requests, praise and\n"
-	       "general gossip about the program to: esmil@imf.au.dk\n");
+	printf
+	    ("Usage: mktorrent [OPTIONS] <target directory or filename>\n\n"
+	     "Options:\n"
+	     "-a, --announce=<url>    : specify the full announce url, required.\n"
+	     "-c, --comment=<comment> : add an optional comment to the metainfo\n"
+	     "-d, --no-date           : don't write the creation date\n"
+	     "-h, --help              : show this help screen\n"
+	     "-l, --piece-length=<n>  : set the piece length to 2^n bytes,\n"
+	     "                          default is 18, that is 2^18 = 256kb.\n"
+	     "-n, --name=<name>       : set the name of the torrent,\n"
+	     "                          default is the basename of the target\n"
+	     "-o, --output=<filename> : set the path and filename of the created file\n"
+	     "                          default is <name>.torrent\n"
+	     "-p, --private           : set the private flag\n"
+	     "-v, --verbose           : be verbose\n"
+	     "\nPlease send bug reports, patches, feature requests, praise and\n"
+	     "general gossip about the program to: esmil@imf.au.dk\n");
 #else
-	printf("Usage: mktorrent [OPTIONS] <target directory or filename>\n\n"
-	       "Options:\n"
-	       "-a <url>       : specify the full announce url, required.\n"
-	       "-c <comment>   : add an optional comment to the metainfo\n"
-	       "-d             : don't write the creation date\n"
-	       "-h             : show this help screen\n"
-	       "-n <name>      : set the name of the torrent,\n"
-	       "                 default is the basename of the target\n"
-	       "-o <filename>  : set the path and filename of the created file\n"
-	       "                 default is <name>.torrent\n"
-	       "-p <n>         : set the piece length to 2^n bytes,\n"
-	       "                 default is 18, that is 2^18 = 256kb.\n"
-	       "-v             : be verbose\n"
-	       "\nPlease send bug reports, patches, feature requests, praise and\n"
-	       "general gossip about the program to: esmil@imf.au.dk\n");
+	printf
+	    ("Usage: mktorrent [OPTIONS] <target directory or filename>\n\n"
+	     "Options:\n"
+	     "-a <url>       : specify the full announce url, required.\n"
+	     "-c <comment>   : add an optional comment to the metainfo\n"
+	     "-d             : don't write the creation date\n"
+	     "-h             : show this help screen\n"
+	     "-l <n>         : set the piece length to 2^n bytes,\n"
+	     "                 default is 18, that is 2^18 = 256kb.\n"
+	     "-n <name>      : set the name of the torrent,\n"
+	     "                 default is the basename of the target\n"
+	     "-o <filename>  : set the path and filename of the created file\n"
+	     "                 default is <name>.torrent\n"
+	     "-p             : set the private flag\n"
+	     "-v             : be verbose\n"
+	     "\nPlease send bug reports, patches, feature requests, praise and\n"
+	     "general gossip about the program to: esmil@imf.au.dk\n");
 #endif
 }
 
@@ -250,9 +254,10 @@ void init(int argc, char *argv[])
 		{"comment", 1, NULL, 'c'},
 		{"no-date", 0, NULL, 'd'},
 		{"help", 0, NULL, 'h'},
+		{"piece-length", 1, NULL, 'l'},
 		{"name", 1, NULL, 'n'},
 		{"output", 1, NULL, 'o'},
-		{"piece-length", 1, NULL, 'p'},
+		{"private", 0, NULL, 'p'},
 		{"verbose", 0, NULL, 'v'},
 		{NULL, 0, NULL, 0}
 	};
@@ -260,10 +265,10 @@ void init(int argc, char *argv[])
 
 	/* now parse the command line options given */
 #ifndef NO_LONG_OPTIONS
-	while ((c = getopt_long(argc, argv, "a:c:dhn:o:p:v",
+	while ((c = getopt_long(argc, argv, "a:c:dhl:n:o:pv",
 				long_options, NULL)) != -1) {
 #else
-	while ((c = getopt(argc, argv, "a:c:dhn:o:p:v")) != -1) {
+	while ((c = getopt(argc, argv, "a:c:dhl:n:o:pv")) != -1) {
 #endif
 		switch (c) {
 		case 'a':
@@ -278,6 +283,9 @@ void init(int argc, char *argv[])
 		case 'h':
 			print_help();
 			exit(EXIT_SUCCESS);
+		case 'l':
+			piece_length = atoi(optarg);
+			break;
 		case 'n':
 			torrent_name = optarg;
 			break;
@@ -285,7 +293,7 @@ void init(int argc, char *argv[])
 			metainfo_file_path = optarg;
 			break;
 		case 'p':
-			piece_length = atoi(optarg);
+			private = 1;
 			break;
 		case 'v':
 			verbose = 1;
@@ -300,8 +308,9 @@ void init(int argc, char *argv[])
 	/* set the correct piece length.
 	   default is 2^18 = 256kb. */
 	if (piece_length < 15 || piece_length > 21) {
-		fprintf(stderr, "error: piece length must be a number between "
-				"15 and 21.\n");
+		fprintf(stderr,
+			"error: piece length must be a number between "
+			"15 and 21.\n");
 		exit(EXIT_FAILURE);
 	}
 	piece_length = 1 << piece_length;
@@ -372,4 +381,3 @@ void init(int argc, char *argv[])
 		       "That's %u pieces of %zu bytes each.\n\n",
 		       size, pieces, piece_length);
 }
-

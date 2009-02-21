@@ -164,12 +164,12 @@ unsigned char *make_hash()
 {
 
 	unsigned char *hash_string,	/* the hash string we're producing */
-	*pos,				/* where in hash_string to put the
-					   hash of the next piece */
-	*piece,				/* the current piece we're hashing */
+	*pos,			/* where in hash_string to put the
+				   hash of the next piece */
+	*piece,			/* the current piece we're hashing */
 	*piece1, *piece2, *piece3;	/* allocated piece buffers */
 	pthread_t print_progress_thread;	/* progress printer thread */
-	pthread_t file_reader_thread;		/* file reader thread */
+	pthread_t file_reader_thread;	/* file reader thread */
 	unsigned long last_piece_length;	/* length of last piece */
 
 
