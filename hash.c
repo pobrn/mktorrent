@@ -164,12 +164,12 @@ unsigned char *make_hash()
 {
 
 	unsigned char *hash_string,	/* the hash string we're producing */
-	*pos,			/* where in hash_string to put the
-				   hash of the next piece */
-	*piece,			/* the current piece we're hashing */
+	*pos,				/* where in hash_string to put the
+					   hash of the next piece */
+	*piece,				/* the current piece we're hashing */
 	*piece1, *piece2, *piece3;	/* allocated piece buffers */
 	pthread_t print_progress_thread;	/* progress printer thread */
-	pthread_t file_reader_thread;	/* file reader thread */
+	pthread_t file_reader_thread;		/* file reader thread */
 	unsigned long last_piece_length;	/* length of last piece */
 
 
@@ -190,10 +190,10 @@ unsigned char *make_hash()
 	/* give the second piece buffer to the file reader thread and
 	   set it to work */
 	pthread_create(&file_reader_thread, NULL, file_reader, piece2);
-	/* we set piece to be first piece for the while loop to begin */
+	/* we set piece to the third piece for the while loop to begin */
 	piece = piece3;
 
-	/* not set off the progress printer */
+	/* now set off the progress printer */
 	pthread_create(&print_progress_thread, NULL, print_progress, NULL);
 
 	/* repeat hashing until only the last piece remains */
@@ -203,7 +203,7 @@ unsigned char *make_hash()
 		/* calculate the SHA1 hash of the piece and write it
 		   the right place in the hash string */
 		SHA1(piece, piece_length, pos);
-		/* next hash we should write 20 bytes further ahead */
+		/* next hash should be written 20 bytes further ahead */
 		pos += SHA_DIGEST_LENGTH;
 		/* yeih! one piece done */
 		pieces_done++;
@@ -220,11 +220,12 @@ unsigned char *make_hash()
 	SHA1(piece, last_piece_length, pos);
 	/* yeih! we're done */
 	pieces_done++;
-	/* ..so stop printing our progress.
-	   the file reader thread stops itself when it's done. */
+	/* ..so stop printing our progress. */
 	pthread_cancel(print_progress_thread);
 	/* ok, let the user know we're done too */
 	printf("\rHashed %u/%u pieces.\n", pieces_done, pieces);
+
+	/* the file reader thread stops itself when it's done. */
 
 	/* free the piece buffers before we return */
 	free(piece1);

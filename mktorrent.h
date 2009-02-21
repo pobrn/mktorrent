@@ -4,6 +4,7 @@
 #include <unistd.h>		/* access(), read(), close(), getcwd() */
 #include <string.h>		/* strlen() etc. */
 #include <getopt.h>		/* getopt_long() */
+#include <libgen.h>		/* basename() */
 #include <fcntl.h>		/* open() */
 #include <ftw.h>		/* ftw() */
 #include <time.h>		/* time() */
@@ -26,11 +27,12 @@ struct fl_node_s {
 /* options */
 extern size_t piece_length;	/* piece length */
 extern char *announce_url;	/* announce URL */
-extern char *comment;		/* optional comment to add to the metafile */
+extern char *comment;		/* optional comment to add to the metainfo */
 extern char *torrent_name;	/* name of the torrent (name of directory) */
-extern char *metafile_path;	/* absolute path to the metafile we're creating */
-extern int verbose;		/* be verbose */
+extern char *metainfo_file_path;/* absolute path to the metainfo file */
+extern int target_is_directory;	/* target is a directory not just a single file */
 extern int no_creation_date;	/* don't write the creation date */
+extern int verbose;		/* be verbose */
 
 /* information calculated by read_dir() */
 extern unsigned long long size;	/* combined size of all files in the torrent */

@@ -25,41 +25,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include "mktorrent.h"
 
 /*
- * write the metafile to the metafile stream using all the information
- * we've gathered so far and the hash string calculated
+ * write the file list if the torrent consists of a directory
  */
-void write_metafile(FILE * metafile, unsigned char *hash_string)
+static void write_file_list(FILE *file)
 {
 	fl_node p;
 	char *a, *b;
 
-	/* let the user know we've started writing the metafile */
-	printf("Writing torrent... ");
-	fflush(stdout);
-
-#ifdef DEBUG
-	printf("\n");
-#endif
-
-	/* every metafile is one big dictonary
-	   and the first entry is the announce url */
-	fprintf(metafile, "d8:announce%zu:%s",
-		strlen(announce_url), announce_url);
-	/* now add the comment if one is specified */
-	if (comment != NULL)
-		fprintf(metafile, "7:comment%zu:%s",
-			strlen(comment), comment);
-	/* I made this! */
-	fprintf(metafile, "10:created by13:mktorrent " VERSION);
-	/* add the creation date */
-	if (!no_creation_date)
-		fprintf(metafile, "13:creation datei%ue",
-			(unsigned) time(NULL));
-
-	/* now here comes the info section.
-	   it is yet another dictionary and the first entry
-	   is the list of files and their respective sizes */
-	fprintf(metafile, "4:infod5:filesl");
+	fprintf(file, "5:filesl");
 
 	/* go through all the files */
 	for (p = file_list; p; p = p->next) {
@@ -69,7 +42,7 @@ void write_metafile(FILE * metafile, unsigned char *hash_string)
 		/* the file list contains a dictionary for every file
 		   with entries for the length and path
 		   write the length first */
-		fprintf(metafile, "d6:lengthi%ue4:pathl",
+		fprintf(file, "d6:lengthi%ue4:pathl",
 			(unsigned) p->size);
 		/* the file path is written as a list of subdirectories
 		   and the last entry is the filename
@@ -81,7 +54,7 @@ void write_metafile(FILE * metafile, unsigned char *hash_string)
 			   will only write the first subdirectory name */
 			*b = '\0';
 			/* print it bencoded */
-			fprintf(metafile, "%zu:%s", strlen(a), a);
+			fprintf(file, "%zu:%s", strlen(a), a);
 			/* undo our alteration to the string */
 			*b = '/';
 			/* and move a to the beginning of the next
@@ -90,24 +63,62 @@ void write_metafile(FILE * metafile, unsigned char *hash_string)
 		}
 		/* now print the filename bencoded and end the
 		   path name list and file dictionary */
-		fprintf(metafile, "%zu:%see", strlen(a), a);
+		fprintf(file, "%zu:%see", strlen(a), a);
 	}
 
 	/* whew, now end the file list */
-	fprintf(metafile, "e");
+	fprintf(file, "e");
+}
 
-	/* the info section also contains the name of the torrent */
-	fprintf(metafile, "4:name%zu:%s", strlen(torrent_name),
-		torrent_name);
-	/* ..and the piece length */
-	fprintf(metafile, "12:piece lengthi%zue", piece_length);
-	/* ..and the number of pieces */
-	fprintf(metafile, "6:pieces%u:", pieces * SHA_DIGEST_LENGTH);
-	/* ..and finally the hash string of all the pieces */
-	fwrite(hash_string, 1, pieces * SHA_DIGEST_LENGTH, metafile);
+/*
+ * write metainfo to the file stream using all the information
+ * we've gathered so far and the hash string calculated
+ */
+void write_metainfo(FILE *file, unsigned char *hash_string)
+{
+	/* let the user know we've started writing the metainfo file */
+	printf("Writing metainfo file... ");
+	fflush(stdout);
+
+#ifdef DEBUG
+	printf("\n");
+#endif
+
+	/* every metainfo file is one big dictonary
+	   and the first entry is the announce url */
+	fprintf(file, "d8:announce%zu:%s",
+		strlen(announce_url), announce_url);
+	/* now add the comment if one is specified */
+	if (comment != NULL)
+		fprintf(file, "7:comment%zu:%s",
+			strlen(comment), comment);
+	/* I made this! */
+	fprintf(file, "10:created by13:mktorrent " VERSION);
+	/* add the creation date */
+	if (!no_creation_date)
+		fprintf(file, "13:creation datei%ue",
+			(unsigned) time(NULL));
+
+	/* now here comes the info section
+	   it is yet another dictionary */
+	fprintf(file, "4:infod");
+	/* first entry is either 'length', which specifies the length of a
+	   single file torrent, or a list of files and their respective sizes */
+	if (!target_is_directory)
+		fprintf(file, "6:lengthi%ue",
+				(unsigned) file_list->size);
+	else
+		write_file_list(file);
+
+	/* the info section also contains the name of the torrent,
+	   the piece length and the hash string */
+	fprintf(file, "4:name%zu:%s12:piece lengthi%zue6:pieces%u:",
+			strlen(torrent_name), torrent_name,
+			piece_length, pieces * SHA_DIGEST_LENGTH);
+	fwrite(hash_string, 1, pieces * SHA_DIGEST_LENGTH, file);
 
 	/* now end the info section and the root dictionary */
-	fprintf(metafile, "ee");
+	fprintf(file, "ee");
 
 	/* let the user know how fast we were */
 	printf("done.\n");

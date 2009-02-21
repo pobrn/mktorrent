@@ -24,48 +24,45 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 #include "mktorrent.h"
 
-/* options.c */
-extern char *process_options(int argc, char *argv[]);
-
-/* dir.c */
-extern void read_dir();
-
-/* hash.c */
-extern unsigned char *make_hash();
-
-/* metafile.c */
-extern void write_metafile(FILE * metafile, unsigned char *hash_string);
-
 /* global variables */
 /* options */
-size_t piece_length = 256 * 1024;	/* 256kb by default */
+size_t piece_length = 18;	/* 2^18 = 256kb by default */
 char *announce_url = NULL;	/* announce url */
 char *torrent_name = NULL;	/* name of the torrent (name of directory) */
-char *metafile_path;		/* absolute path to the metafile we're creating */
-char *comment = NULL;		/* optional comment to add to the metafile */
-int verbose = 0;		/* be verbose */
+char *metainfo_file_path;	/* absolute path to the metainfo file */
+char *comment = NULL;		/* optional comment to add to the metainfo */
+int target_is_directory = 0;	/* target is a directory not just a single file */
 int no_creation_date = 0;	/* don't write the creation date */
+int verbose = 0;		/* be verbose */
 
 /* information calculated by read_dir() */
 unsigned long long size = 0;	/* the combined size of all files in the torrent */
 fl_node file_list = NULL;	/* linked list of files and their individual sizes */
 unsigned int pieces;		/* number of pieces */
 
+/* init.c */
+extern void init(int argc, char *argv[]);
+
+/* hash.c */
+extern unsigned char *make_hash();
+
+/* output.c */
+extern void write_metainfo(FILE *file, unsigned char *hash_string);
 
 /*
- * create and open the metafile for writing and create a stream for it
+ * create and open the metainfo file for writing and create a stream for it
  * we don't want to overwrite anything, so abort if the file is already there
  */
-static FILE *open_metafile()
+static FILE *open_file()
 {
 	int fd;			/* file descriptor */
-	FILE *stream;		/* metafile stream */
+	FILE *stream;		/* file stream */
 
-	/* open and create the metafile if it doesn't exist already */
-	if ((fd = open(metafile_path, O_WRONLY | O_CREAT | O_EXCL,
+	/* open and create the file if it doesn't exist already */
+	if ((fd = open(metainfo_file_path, O_WRONLY | O_CREAT | O_EXCL,
 		       S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1) {
 		fprintf(stderr, "error: couldn't create %s for writing, "
-			"perhaps it is already there.\n", metafile_path);
+			"perhaps it is already there.\n", metainfo_file_path);
 		exit(1);
 	}
 
@@ -73,7 +70,7 @@ static FILE *open_metafile()
 	if ((stream = fdopen(fd, "w")) == NULL) {
 		fprintf(stderr,
 			"error: couldn't create stream for file %s.",
-			metafile_path);
+			metainfo_file_path);
 		exit(1);
 	}
 
@@ -81,12 +78,12 @@ static FILE *open_metafile()
 }
 
 /*
- * close the metafile
+ * close the metainfo file
  */
-static void close_metafile(FILE * metafile)
+static void close_file(FILE *file)
 {
-	/* close the metafile */
-	if (fclose(metafile)) {
+	/* close the metainfo file */
+	if (fclose(file)) {
 		fprintf(stderr, "error: couldn't close stream.");
 		exit(1);
 	}
@@ -97,28 +94,23 @@ static void close_metafile(FILE * metafile)
  */
 int main(int argc, char *argv[])
 {
-	char *dir;		/* directory for which we are creating a torrent */
-	static FILE *metafile;	/* stream for writing to the metafile */
+	static FILE *file;	/* stream for writing to the metainfo file */
 
 	/* print who we are */
 	printf("mktorrent " VERSION " (c) 2007 Emil Renner Berthing\n\n");
 
-	/* process the options and get the directory */
-	dir = process_options(argc, argv);
+	/* process options and initiate global variables */
+	init(argc, argv);
 
-	/* open the metafile stream now, so we don't have to abort
-	 *after* we did all the hashing in case we fail */
-	metafile = open_metafile();
+	/* open the file stream now, so we don't have to abort
+	   _after_ we did all the hashing in case we fail */
+	file = open_file();
 
-	/* read the specified directory and initiate
-	   size, file_list and pieces */
-	read_dir(dir);
+	/* calculate hash string and write the metainfo to file */
+	write_metainfo(file, make_hash());
 
-	/* calculate hash string and write the metafile */
-	write_metafile(metafile, make_hash());
-
-	/* close the metafile stream */
-	close_metafile(metafile);
+	/* close the file stream */
+	close_file(file);
 
 	/* yeih! everything seemed to go as planned */
 	return 0;

@@ -27,6 +27,10 @@ PREFIX  ?= /usr/local
 # as we can't read from the harddisk and calculate hashes simultaneously.
 #NO_THREADS = 1
 
+# Disable support for long options. Will make the program smaller
+# and perhaps even more portable.
+#NO_LONG_OPTIONS = 1
+
 # Disable a redundent check to see if the amount of bytes read from files
 # when calculating their hash strings matches the sum of reported file sizes.
 # I've never seen this fail. It will fail if you start deleting or altering
@@ -54,10 +58,10 @@ PREFIX  ?= /usr/local
 #-------------Nothing interesting below this line-----------------------------
 
 program := mktorrent
-version := 0.1
+version := 0.2
 
 HEADERS  = mktorrent.h
-SRCS    := options.c dir.c hash.c metafile.c main.c
+SRCS    := init.c hash.c output.c main.c
 OBJS     = $(SRCS:.c=.o)
 LIBS    := -lssl
 
@@ -66,6 +70,10 @@ DEFINES += -DNO_THREADS
 SRCS := $(SRCS:hash.c=simple_hash.c)
 else
 LIBS += -lpthread
+endif
+
+ifdef NO_LONG_OPTIONS
+DEFINES += -DNO_LONG_OPTIONS
 endif
 
 ifdef NO_HASH_CHECK
