@@ -1,0 +1,6 @@
+To build the program you need OpenSSL installed.
+Type 'make' to build the program.
+Do 'make install' to install the program to /usr/local/bin.
+For more options look in the Makefile script.
+
+See http://home.imf.au.dk/esmil/mktorrent/ for more info.
