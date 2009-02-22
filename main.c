@@ -18,7 +18,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
 #include <stdlib.h>		/* exit() */
 #include <stdio.h>		/* printf() etc. */
-#include <unistd.h>		/* unlink() */
 #include <sys/stat.h>		/* S_IRUSR, S_IWUSR, S_IRGRP, S_IROTH */
 #include <fcntl.h>		/* open() */
 
