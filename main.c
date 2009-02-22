@@ -17,6 +17,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
 #include <stdlib.h>		/* exit() */
+#include <errno.h>		/* errno */
+#include <string.h>		/* strerror() */
 #include <stdio.h>		/* printf() etc. */
 #include <sys/stat.h>		/* S_IRUSR, S_IWUSR, S_IRGRP, S_IROTH */
 #include <fcntl.h>		/* open() */
@@ -56,36 +58,37 @@ extern void write_metainfo(FILE * file, unsigned char *hash_string);
 static FILE *open_file()
 {
 	int fd;			/* file descriptor */
-	FILE *stream;		/* file stream */
+	FILE *f;		/* file stream */
 
 	/* open and create the file if it doesn't exist already */
-	if ((fd = open(metainfo_file_path, O_WRONLY | O_CREAT | O_EXCL,
-		       S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1) {
-		fprintf(stderr, "error: couldn't create %s for writing, "
-			"perhaps it is already there.\n",
-			metainfo_file_path);
+	fd = open(metainfo_file_path, O_WRONLY | O_CREAT | O_EXCL,
+		       S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+	if (fd < 0) {
+		fprintf(stderr, "Error creating '%s': %s\n",
+				metainfo_file_path, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
 	/* create the stream from this filedescriptor */
-	if ((stream = fdopen(fd, "w")) == NULL) {
-		fprintf(stderr,
-			"error: couldn't create stream for file %s.",
-			metainfo_file_path);
+	f = fdopen(fd, "w");
+	if (f == NULL) {
+		fprintf(stderr,	"Error creating stream for '%s': %s\n",
+				metainfo_file_path, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
-	return stream;
+	return f;
 }
 
 /*
  * close the metainfo file
  */
-static void close_file(FILE * file)
+static void close_file(FILE *f)
 {
 	/* close the metainfo file */
-	if (fclose(file)) {
-		fprintf(stderr, "error: couldn't close stream.");
+	if (fclose(f)) {
+		fprintf(stderr, "Error closing stream: %s\n",
+				strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 }

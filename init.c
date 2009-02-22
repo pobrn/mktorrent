@@ -17,6 +17,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
 #include <stdlib.h>		/* exit() */
+#include <errno.h>		/* errno */
+#include <string.h>		/* strerror() */
 #include <stdio.h>		/* printf() etc. */
 #include <sys/stat.h>		/* the stat structure */
 #include <unistd.h>		/* getopt(), getcwd() */
@@ -91,7 +93,8 @@ static int is_dir(char *target)
 
 	/* stat the target */
 	if (stat(target, &s)) {
-		fprintf(stderr, "error: cannot stat %s.\n", target);
+		fprintf(stderr, "Error stat'ing '%s': %s\n",
+				target, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
@@ -102,8 +105,8 @@ static int is_dir(char *target)
 	/* if it isn't a regular file either, something is wrong.. */
 	if (!S_ISREG(s.st_mode)) {
 		fprintf(stderr,
-			"error: %s isn't a directory og regular file.\n",
-			target);
+			"'%s' is neither a directory nor regular file.\n",
+				target);
 		exit(EXIT_FAILURE);
 	}
 
@@ -125,10 +128,9 @@ static int is_dir(char *target)
  * counts the number of (readable) files, their commulative size and adds
  * their names and individual sizes to the file list
  */
-static int process_node(const char *fpath, const struct stat *sb,
+static int process_node(const char *path, const struct stat *sb,
 			int typeflag)
 {
-	const char *path;	/* path to file */
 	fl_node *p;		/* pointer to a node in the file list */
 	fl_node new_node;	/* place to store a newly created node */
 
@@ -137,12 +139,12 @@ static int process_node(const char *fpath, const struct stat *sb,
 		return 0;
 
 	/* ignore the leading "./" */
-	path = fpath + 2;
+	path += 2;
 
 	/* now path should be a normal file and readable
 	   otherwise display a warning and skip it */
 	if (typeflag != FTW_F || access(path, R_OK)) {
-		fprintf(stderr, "warning: cannot read %s!\n", path);
+		fprintf(stderr, "Warning: Cannot read '%s', skipping.\n", path);
 		return 0;
 	}
 
@@ -181,8 +183,8 @@ static void read_dir(const char *dir)
 {
 	/* change to the specified directory */
 	if (chdir(dir)) {
-		fprintf(stderr, "error: cannot change directory to %s.\n",
-			dir);
+		fprintf(stderr, "Error changing directory to '%s': %s\n",
+				dir, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
@@ -190,8 +192,8 @@ static void read_dir(const char *dir)
 	   process_node() will take care of creating the file list
 	   and counting the size of all the files */
 	if (ftw("./", process_node, MAX_OPENFD)) {
-		fprintf(stderr,
-			"error: ftw() failed, this shouldn't happen.\n");
+		fprintf(stderr, "Error scanning directory: %s\n",
+				strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 }
@@ -202,41 +204,41 @@ static void read_dir(const char *dir)
 static void print_help()
 {
 #ifndef NO_LONG_OPTIONS
-	printf
-	    ("Usage: mktorrent [OPTIONS] <target directory or filename>\n\n"
-	     "Options:\n"
-	     "-a, --announce=<url>    : specify the full announce url, required.\n"
-	     "-c, --comment=<comment> : add an optional comment to the metainfo\n"
-	     "-d, --no-date           : don't write the creation date\n"
-	     "-h, --help              : show this help screen\n"
-	     "-l, --piece-length=<n>  : set the piece length to 2^n bytes,\n"
-	     "                          default is 18, that is 2^18 = 256kb.\n"
-	     "-n, --name=<name>       : set the name of the torrent,\n"
-	     "                          default is the basename of the target\n"
-	     "-o, --output=<filename> : set the path and filename of the created file\n"
-	     "                          default is <name>.torrent\n"
-	     "-p, --private           : set the private flag\n"
-	     "-v, --verbose           : be verbose\n"
-	     "\nPlease send bug reports, patches, feature requests, praise and\n"
-	     "general gossip about the program to: esmil@imf.au.dk\n");
+	printf(
+	  "Usage: mktorrent [OPTIONS] <target directory or filename>\n\n"
+	  "Options:\n"
+	  "-a, --announce=<url>    : specify the full announce url, required.\n"
+	  "-c, --comment=<comment> : add an optional comment to the metainfo\n"
+	  "-d, --no-date           : don't write the creation date\n"
+	  "-h, --help              : show this help screen\n"
+	  "-l, --piece-length=<n>  : set the piece length to 2^n bytes,\n"
+	  "                          default is 18, that is 2^18 = 256kb.\n"
+	  "-n, --name=<name>       : set the name of the torrent,\n"
+	  "                          default is the basename of the target\n"
+	  "-o, --output=<filename> : set the path and filename of the created file\n"
+	  "                          default is <name>.torrent\n"
+	  "-p, --private           : set the private flag\n"
+	  "-v, --verbose           : be verbose\n"
+	  "\nPlease send bug reports, patches, feature requests, praise and\n"
+	  "general gossip about the program to: esmil@mailme.dk\n");
 #else
-	printf
-	    ("Usage: mktorrent [OPTIONS] <target directory or filename>\n\n"
-	     "Options:\n"
-	     "-a <url>       : specify the full announce url, required.\n"
-	     "-c <comment>   : add an optional comment to the metainfo\n"
-	     "-d             : don't write the creation date\n"
-	     "-h             : show this help screen\n"
-	     "-l <n>         : set the piece length to 2^n bytes,\n"
-	     "                 default is 18, that is 2^18 = 256kb.\n"
-	     "-n <name>      : set the name of the torrent,\n"
-	     "                 default is the basename of the target\n"
-	     "-o <filename>  : set the path and filename of the created file\n"
-	     "                 default is <name>.torrent\n"
-	     "-p             : set the private flag\n"
-	     "-v             : be verbose\n"
-	     "\nPlease send bug reports, patches, feature requests, praise and\n"
-	     "general gossip about the program to: esmil@imf.au.dk\n");
+	printf(
+	  "Usage: mktorrent [OPTIONS] <target directory or filename>\n\n"
+	  "Options:\n"
+	  "-a <url>       : specify the full announce url, required.\n"
+	  "-c <comment>   : add an optional comment to the metainfo\n"
+	  "-d             : don't write the creation date\n"
+	  "-h             : show this help screen\n"
+	  "-l <n>         : set the piece length to 2^n bytes,\n"
+	  "                 default is 18, that is 2^18 = 256kb.\n"
+	  "-n <name>      : set the name of the torrent,\n"
+	  "                 default is the basename of the target\n"
+	  "-o <filename>  : set the path and filename of the created file\n"
+	  "                 default is <name>.torrent\n"
+	  "-p             : set the private flag\n"
+	  "-v             : be verbose\n"
+	  "\nPlease send bug reports, patches, feature requests, praise and\n"
+	  "general gossip about the program to: esmil@mailme.dk\n");
 #endif
 }
 
@@ -299,8 +301,7 @@ void init(int argc, char *argv[])
 			verbose = 1;
 			break;
 		case '?':
-			fprintf(stderr, "error: wrong arguments given, "
-				"use -h for help.\n");
+			fprintf(stderr, "Use -h for help.\n");
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -309,7 +310,7 @@ void init(int argc, char *argv[])
 	   default is 2^18 = 256kb. */
 	if (piece_length < 15 || piece_length > 21) {
 		fprintf(stderr,
-			"error: piece length must be a number between "
+			"The piece length must be a number between "
 			"15 and 21.\n");
 		exit(EXIT_FAILURE);
 	}
@@ -318,14 +319,14 @@ void init(int argc, char *argv[])
 	/* user must specify an announce url as it wouldn't make any sense
 	   to have a default for this */
 	if (announce_url == NULL) {
-		fprintf(stderr, "error: must specify an announce url, "
-			"use -h for help.\n");
+		fprintf(stderr, "Must specify an announce url. "
+			"Use -h for help.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	/* ..and a file or directory from which to create the torrent */
 	if (optind >= argc) {
-		fprintf(stderr, "error: must specify the contents, "
+		fprintf(stderr, "Must specify the contents, "
 			"use -h for help\n");
 		exit(EXIT_FAILURE);
 	}
@@ -338,7 +339,7 @@ void init(int argc, char *argv[])
 	   if metainfo_file_path is not set use <torrent name>.torrent as
 	   file name */
 	metainfo_file_path =
-	    get_absolute_file_path(metainfo_file_path, torrent_name);
+		get_absolute_file_path(metainfo_file_path, torrent_name);
 
 	/* if we should be verbose print out all the options
 	   as we have set them */

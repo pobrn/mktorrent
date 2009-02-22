@@ -17,6 +17,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
 #include <stdlib.h>		/* exit(), malloc() */
+#include <errno.h>		/* errno */
+#include <string.h>		/* strerror() */
 #include <stdio.h>		/* printf() etc. */
 #include <fcntl.h>		/* open() */
 #include <unistd.h>		/* access(), read(), close() */
@@ -104,9 +106,8 @@ static void *file_reader(void *data)
 
 		/* open the current file for reading */
 		if ((fd = open(p->path, O_RDONLY)) == -1) {
-			fprintf(stderr,
-				"error: couldn't open %s for reading.\n",
-				p->path);
+			fprintf(stderr,	"Error opening '%s' for reading: %s\n",
+					p->path, strerror(errno));
 			exit(EXIT_FAILURE);
 		}
 
@@ -129,8 +130,8 @@ static void *file_reader(void *data)
 
 		/* now close the file */
 		if (close(fd)) {
-			fprintf(stderr, "error: failed to close %s.",
-				p->path);
+			fprintf(stderr, "Error closing '%s': %s\n",
+					p->path, strerror(errno));
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -144,8 +145,8 @@ static void *file_reader(void *data)
 	   number of bytes read from files matches size */
 	counter += r;
 	if (counter != size) {
-		fprintf(stderr, "error: counted %llu bytes, "
-			"but hashed %llu bytes.\n", size, counter);
+		fprintf(stderr, "Counted %llu bytes, but hashed %llu bytes. "
+				"Something is wrong...\n", size, counter);
 		exit(EXIT_FAILURE);
 	}
 #endif

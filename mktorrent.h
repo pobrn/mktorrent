@@ -1,8 +1,9 @@
 #ifdef ALLINONE
 #include <stdlib.h>		/* exit() */
+#include <errno.h>		/* errno */
+#include <string.h>		/* strerror(), strlen() etc. */
 #include <stdio.h>		/* printf() etc. */
 #include <unistd.h>		/* access(), read(), close(), getcwd() */
-#include <string.h>		/* strlen() etc. */
 #include <getopt.h>		/* getopt_long() */
 #include <libgen.h>		/* basename() */
 #include <fcntl.h>		/* open() */
