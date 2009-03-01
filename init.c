@@ -84,6 +84,49 @@ static char *get_absolute_file_path(char *file_path, char *torrent_name)
 }
 
 /*
+ * parse the announce URLs given as <url>[,<url>]* and
+ * return a string list containing the URLs
+ */
+static sl_node get_announces(char *s)
+{
+	sl_node list, last;
+	char *e;
+
+	/* allocate memory for the first node in the list */
+	list = last = malloc(sizeof(struct sl_node_s));
+	if (list == NULL) {
+		fprintf(stderr, "Out of memory.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	/* add URLs to the list while there are commas in the string */
+	while ((e = index(s, ','))) {
+		/* set the commas to \0 so the URLs appear as
+		 * separate strings */
+		*e = '\0';
+		last->s = s;
+
+		/* move s to point to the next URL */
+		s = e + 1;
+
+		/* append another node to the list */
+		last->next = malloc(sizeof(struct sl_node_s));
+		last = last->next;
+		if (last == NULL) {
+			fprintf(stderr, "Out of memory.\n");
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	/* set the last URL in the list */
+	last->s = s;
+	last->next = NULL;
+
+	/* return the list */
+	return list;
+}
+
+/*
  * checks if target is a directory
  * sets the file_list and size if it isn't
  */
@@ -207,41 +250,96 @@ static void print_help()
 	printf(
 	  "Usage: mktorrent [OPTIONS] <target directory or filename>\n\n"
 	  "Options:\n"
-	  "-a, --announce=<url>    : specify the full announce url, required.\n"
-	  "-c, --comment=<comment> : add an optional comment to the metainfo\n"
-	  "-d, --no-date           : don't write the creation date\n"
-	  "-h, --help              : show this help screen\n"
-	  "-l, --piece-length=<n>  : set the piece length to 2^n bytes,\n"
-	  "                          default is 18, that is 2^18 = 256kb.\n"
-	  "-n, --name=<name>       : set the name of the torrent,\n"
-	  "                          default is the basename of the target\n"
-	  "-o, --output=<filename> : set the path and filename of the created file\n"
-	  "                          default is <name>.torrent\n"
-	  "-p, --private           : set the private flag\n"
-	  "-v, --verbose           : be verbose\n"
-	  "-w, --web-seed=<url>    : add web seed\n"
+	  "-a, --announce=<url>[,<url>]* : specify the full announce URLs.\n"
+	  "                                at least one is required.\n"
+	  "                                additional -a adds backup trackers.\n"
+	  "-c, --comment=<comment>       : add a comment to the metainfo\n"
+	  "-d, --no-date                 : don't write the creation date\n"
+	  "-h, --help                    : show this help screen\n"
+	  "-l, --piece-length=<n>        : set the piece length to 2^n bytes,\n"
+	  "                                default is 18, that is 2^18 = 256kb.\n"
+	  "-n, --name=<name>             : set the name of the torrent,\n"
+	  "                                default is the basename of the target\n"
+	  "-o, --output=<filename>       : set the path and filename of the created file\n"
+	  "                                default is <name>.torrent\n"
+	  "-p, --private                 : set the private flag\n"
+	  "-v, --verbose                 : be verbose\n"
+	  "-w, --web-seed=<url>          : add web seed\n"
 	  "\nPlease send bug reports, patches, feature requests, praise and\n"
 	  "general gossip about the program to: esmil@mailme.dk\n");
 #else
 	printf(
 	  "Usage: mktorrent [OPTIONS] <target directory or filename>\n\n"
 	  "Options:\n"
-	  "-a <url>       : specify the full announce url, required.\n"
-	  "-c <comment>   : add an optional comment to the metainfo\n"
-	  "-d             : don't write the creation date\n"
-	  "-h             : show this help screen\n"
-	  "-l <n>         : set the piece length to 2^n bytes,\n"
-	  "                 default is 18, that is 2^18 = 256kb.\n"
-	  "-n <name>      : set the name of the torrent,\n"
-	  "                 default is the basename of the target\n"
-	  "-o <filename>  : set the path and filename of the created file\n"
-	  "                 default is <name>.torrent\n"
-	  "-p             : set the private flag\n"
-	  "-v             : be verbose\n"
-	  "-w <url>       : add web seed\n"
+	  "-a <url>[,<url]* : specify the full announce URLs.\n"
+	  "                   at least one is required.\n"
+	  "                   additional -a adds backup trackers.\n"
+	  "-c <comment>     : add a comment to the metainfo\n"
+	  "-d               : don't write the creation date\n"
+	  "-h               : show this help screen\n"
+	  "-l <n>           : set the piece length to 2^n bytes,\n"
+	  "                   default is 18, that is 2^18 = 256kb.\n"
+	  "-n <name>        : set the name of the torrent,\n"
+	  "                   default is the basename of the target\n"
+	  "-o <filename>    : set the path and filename of the created file\n"
+	  "                   default is <name>.torrent\n"
+	  "-p               : set the private flag\n"
+	  "-v               : be verbose\n"
+	  "-w <url>         : add web seed\n"
 	  "\nPlease send bug reports, patches, feature requests, praise and\n"
 	  "general gossip about the program to: esmil@mailme.dk\n");
 #endif
+}
+
+/*
+ * print the full announce list
+ */
+static void print_announce_list(al_node list)
+{
+	unsigned int n;
+
+	for (n = 1; list; list = list->next, n++) {
+		sl_node l = list->l;
+
+		printf("    %u : %s\n", n, l->s);
+		for (l = l->next; l; l = l->next)
+			printf("        %s\n", l->s);
+	}
+}
+
+/*
+ * print out all the options
+ */
+static void dump_options()
+{
+	printf("Options:\n"
+	       "  Announce URLs:\n");
+
+	print_announce_list(announce_list);
+
+	printf("  Torrent name: %s\n"
+	       "  Metafile:     %s\n"
+	       "  Piece length: %zu\n"
+	       "  Be verbose:   yes\n",
+	       torrent_name, metainfo_file_path, piece_length);
+
+	printf("  Write date:   ");
+	if (no_creation_date)
+		printf("no\n");
+	else
+		printf("yes\n");
+
+	printf("  Web Seed URL: ");
+	if (web_seed_url == NULL)
+		printf("none\n");
+	else
+		printf("%s\n", web_seed_url);
+
+	printf("  Comment:      ");
+	if (comment == NULL)
+		printf("none\n\n");
+	else
+		printf("\"%s\"\n\n", comment);
 }
 
 /*
@@ -251,6 +349,8 @@ static void print_help()
 void init(int argc, char *argv[])
 {
 	int c;			/* return value of getopt() */
+	al_node announce_last = NULL;
+
 #ifndef NO_LONG_OPTIONS
 	/* the option structure to pass to getopt_long() */
 	static struct option long_options[] = {
@@ -277,7 +377,20 @@ void init(int argc, char *argv[])
 #endif
 		switch (c) {
 		case 'a':
-			announce_url = optarg;
+			if (announce_last == NULL) {
+				announce_list = announce_last =
+					malloc(sizeof(struct al_node_s));
+			} else {
+				announce_last->next =
+					malloc(sizeof(struct al_node_s));
+				announce_last = announce_last->next;
+
+			}
+			if (announce_last == NULL) {
+				fprintf(stderr, "Out of memory.\n");
+				exit(EXIT_FAILURE);
+			}
+			announce_last->l = get_announces(optarg);
 			break;
 		case 'c':
 			comment = optarg;
@@ -322,13 +435,14 @@ void init(int argc, char *argv[])
 	}
 	piece_length = 1 << piece_length;
 
-	/* user must specify an announce url as it wouldn't make any sense
-	   to have a default for this */
-	if (announce_url == NULL) {
-		fprintf(stderr, "Must specify an announce url. "
+	/* user must specify at least one announce URL as it wouldn't make
+	 * any sense to have a default for this */
+	if (announce_list == NULL) {
+		fprintf(stderr, "Must specify an announce URL. "
 			"Use -h for help.\n");
 		exit(EXIT_FAILURE);
 	}
+	announce_last->next = NULL;
 
 	/* ..and a file or directory from which to create the torrent */
 	if (optind >= argc) {
@@ -349,36 +463,8 @@ void init(int argc, char *argv[])
 
 	/* if we should be verbose print out all the options
 	   as we have set them */
-	if (verbose) {
-		printf("Options:\n"
-		       "  Announce URL: %s\n"
-		       "  Torrent name: %s\n"
-		       "  Metafile:     %s\n"
-		       "  Piece length: %zu\n"
-		       "  Be verbose:   yes\n",
-		       announce_url, torrent_name, metainfo_file_path,
-		       piece_length);
-
-		printf("  Write date:   ");
-		if (no_creation_date)
-			printf("no\n");
-		else
-			printf("yes\n");
-
-		printf("  Web Seed URL: ");
-		if (web_seed_url == NULL)
-			printf("none\n");
-		else
-			printf("%s\n", web_seed_url);
-
-		printf("  Comment:      ");
-		if (comment == NULL)
-			printf("none\n\n");
-		else
-			printf("\"%s\"\n\n", comment);
-
-	}
-
+	if (verbose)
+		dump_options();
 
 	/* check if target is a directory or just a single file */
 	target_is_directory = is_dir(argv[optind]);
@@ -386,7 +472,7 @@ void init(int argc, char *argv[])
 		read_dir(argv[optind]);
 
 	/* calculate the number of pieces
-	   pieces = ceiling( size / piece_length ) */
+	   pieces = ceil( size / piece_length ) */
 	pieces = (size + piece_length - 1) / piece_length;
 
 	/* now print the size and piece count if we should be verbose */

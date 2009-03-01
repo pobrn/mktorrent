@@ -15,7 +15,23 @@
 #endif
 #endif
 
-/* define the type of a file list node */
+/* string list */
+struct sl_node_s;
+typedef struct sl_node_s *sl_node;
+struct sl_node_s {
+	char *s;
+	sl_node next;
+};
+
+/* announce list */
+struct al_node_s;
+typedef struct al_node_s *al_node;
+struct al_node_s {
+	sl_node l;
+	al_node next;
+};
+
+/* file list node */
 struct fl_node_s;
 typedef struct fl_node_s *fl_node;
 struct fl_node_s {
@@ -27,7 +43,7 @@ struct fl_node_s {
 /* global variables */
 /* options */
 extern size_t piece_length;	/* piece length */
-extern char *announce_url;	/* announce URL */
+extern al_node announce_list;	/* announce URLs */
 extern char *comment;		/* optional comment to add to the metainfo */
 extern char *torrent_name;	/* name of the torrent (name of directory) */
 extern char *metainfo_file_path;	/* absolute path to the metainfo file */

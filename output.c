@@ -25,36 +25,55 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include "mktorrent.h"
 
 /*
- * write the file list if the torrent consists of a directory
+ * write announce list
  */
-static void write_file_list(FILE * file)
+static void write_announce_list(FILE *f, al_node list)
 {
-	fl_node p;
+	/* the announce list is a list of lists of urls */
+	fprintf(f, "13:announce-listl");
+	/* go through them all.. */
+	for (; list; list = list->next) {
+		sl_node l;
+
+		/* .. and print the lists */
+		fprintf(f, "l");
+		for (l = list->l; l; l = l->next)
+			fprintf(f, "%zu:%s", strlen(l->s), l->s);
+		fprintf(f, "e");
+	}
+	fprintf(f, "e");
+}
+
+/*
+ * write file list
+ */
+static void write_file_list(FILE *f, fl_node list)
+{
 	char *a, *b;
 
-	fprintf(file, "5:filesl");
+	fprintf(f, "5:filesl");
 
 	/* go through all the files */
-	for (p = file_list; p; p = p->next) {
+	for (; list; list = list->next) {
 #ifdef DEBUG
-		printf("Writing %s\n", p->path);
+		printf("Writing %s\n", list->path);
 #endif
 		/* the file list contains a dictionary for every file
 		   with entries for the length and path
 		   write the length first */
-		fprintf(file, "d6:lengthi%llue4:pathl",
-			(unsigned long long) p->size);
+		fprintf(f, "d6:lengthi%llue4:pathl",
+			(unsigned long long) list->size);
 		/* the file path is written as a list of subdirectories
 		   and the last entry is the filename
 		   sorry this code is even uglier than the rest */
-		a = p->path;
+		a = list->path;
 		/* while there are subdirectories before the filename.. */
 		while ((b = index(a, '/')) != NULL) {
 			/* set the next '/' to '\0' so fprintf
 			   will only write the first subdirectory name */
 			*b = '\0';
 			/* print it bencoded */
-			fprintf(file, "%zu:%s", strlen(a), a);
+			fprintf(f, "%zu:%s", strlen(a), a);
 			/* undo our alteration to the string */
 			*b = '/';
 			/* and move a to the beginning of the next
@@ -63,18 +82,18 @@ static void write_file_list(FILE * file)
 		}
 		/* now print the filename bencoded and end the
 		   path name list and file dictionary */
-		fprintf(file, "%zu:%see", strlen(a), a);
+		fprintf(f, "%zu:%see", strlen(a), a);
 	}
 
 	/* whew, now end the file list */
-	fprintf(file, "e");
+	fprintf(f, "e");
 }
 
 /*
  * write metainfo to the file stream using all the information
  * we've gathered so far and the hash string calculated
  */
-void write_metainfo(FILE * file, unsigned char *hash_string)
+void write_metainfo(FILE *f, unsigned char *hash_string)
 {
 	/* let the user know we've started writing the metainfo file */
 	printf("Writing metainfo file... ");
@@ -86,50 +105,52 @@ void write_metainfo(FILE * file, unsigned char *hash_string)
 
 	/* every metainfo file is one big dictonary
 	   and the first entry is the announce url */
-	fprintf(file, "d8:announce%zu:%s",
-		strlen(announce_url), announce_url);
-	/* now add the comment if one is specified */
+	fprintf(f, "d8:announce%zu:%s",
+		strlen(announce_list->l->s), announce_list->l->s);
+	/* now write the announce list */
+	write_announce_list(f, announce_list);
+	/* add the comment if one is specified */
 	if (comment != NULL)
-		fprintf(file, "7:comment%zu:%s", strlen(comment), comment);
+		fprintf(f, "7:comment%zu:%s", strlen(comment), comment);
 	/* I made this! */
-	fprintf(file, "10:created by13:mktorrent " VERSION);
+	fprintf(f, "10:created by13:mktorrent " VERSION);
 	/* add the creation date */
 	if (!no_creation_date)
-		fprintf(file, "13:creation datei%ue",
+		fprintf(f, "13:creation datei%ue",
 			(unsigned int) time(NULL));
 
 	/* now here comes the info section
 	   it is yet another dictionary */
-	fprintf(file, "4:infod");
+	fprintf(f, "4:infod");
 	/* first entry is either 'length', which specifies the length of a
 	   single file torrent, or a list of files and their respective sizes */
 	if (!target_is_directory)
-		fprintf(file, "6:lengthi%llue",
+		fprintf(f, "6:lengthi%llue",
 			(unsigned long long) file_list->size);
 	else
-		write_file_list(file);
+		write_file_list(f, file_list);
 
 	/* the info section also contains the name of the torrent,
 	   the piece length and the hash string */
-	fprintf(file, "4:name%zu:%s12:piece lengthi%zue6:pieces%u:",
+	fprintf(f, "4:name%zu:%s12:piece lengthi%zue6:pieces%u:",
 		strlen(torrent_name), torrent_name,
 		piece_length, pieces * SHA_DIGEST_LENGTH);
-	fwrite(hash_string, 1, pieces * SHA_DIGEST_LENGTH, file);
+	fwrite(hash_string, 1, pieces * SHA_DIGEST_LENGTH, f);
 
 	/* set the private flag */
 	if (private)
-		fprintf(file, "7:privatei1e");
+		fprintf(f, "7:privatei1e");
 
 	/* end the info section */
-	fprintf(file, "e");
+	fprintf(f, "e");
 
 	/* add url-list if one is specified */
 	if (web_seed_url != NULL)
-		fprintf(file, "8:url-list%zu:%s",
+		fprintf(f, "8:url-list%zu:%s",
 				strlen(web_seed_url), web_seed_url);
 
 	/* end the root dictionary */
-	fprintf(file, "e");
+	fprintf(f, "e");
 
 	/* let the user know we're done already */
 	printf("done.\n");
