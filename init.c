@@ -53,6 +53,10 @@ static char *get_absolute_file_path(char *file_path, char *torrent_name)
 	   using getcwd is a bit of a PITA */
 	/* allocate initial string */
 	string = malloc(length);
+	if (string == NULL) {
+		fprintf(stderr, "Out of memory.\n");
+		exit(EXIT_FAILURE);
+	}
 	/* while our allocated memory for the working dir isn't big enough */
 	while (getcwd(string, length) == NULL) {
 		/* double the buffer size */
@@ -61,6 +65,10 @@ static char *get_absolute_file_path(char *file_path, char *torrent_name)
 		free(string);
 		/* and allocate a new one twice as big muahaha */
 		string = malloc(length);
+		if (string == NULL) {
+			fprintf(stderr, "Out of memory.\n");
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	/* now set length to the proper length of the working dir */
@@ -70,12 +78,20 @@ static char *get_absolute_file_path(char *file_path, char *torrent_name)
 		/* append <torrent name>.torrent to the working dir */
 		string =
 		    realloc(string, length + strlen(torrent_name) + 10);
+		if (string == NULL) {
+			fprintf(stderr, "Out of memory.\n");
+			exit(EXIT_FAILURE);
+		}
 		sprintf(string + length, "/%s.torrent", torrent_name);
 	} else {
 		/* otherwise append the torrent path to the working dir */
 		string =
 		    realloc(string,
 			    length + strlen(metainfo_file_path) + 2);
+		if (string == NULL) {
+			fprintf(stderr, "Out of memory.\n");
+			exit(EXIT_FAILURE);
+		}
 		sprintf(string + length, "/%s", metainfo_file_path);
 	}
 
@@ -156,6 +172,10 @@ static int is_dir(char *target)
 	/* since we know the torrent is just a single file and we've
 	   already stat'ed it, we might as well set the file list */
 	file_list = malloc(sizeof(struct fl_node_s));
+	if (file_list == NULL) {
+		fprintf(stderr, "Out of memory.\n");
+		exit(EXIT_FAILURE);
+	}
 	file_list->path = target;
 	file_list->size = s.st_size;
 	file_list->next = NULL;
@@ -205,6 +225,10 @@ static int process_node(const char *path, const struct stat *sb,
 
 	/* create a new file list node for the file */
 	new_node = malloc(sizeof(struct fl_node_s));
+	if (new_node == NULL) {
+		fprintf(stderr, "Out of memory.\n");
+		exit(EXIT_FAILURE);
+	}
 	new_node->path = strdup(path);
 	new_node->size = sb->st_size;
 

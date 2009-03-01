@@ -52,6 +52,12 @@ unsigned char *make_hash()
 	/* allocate memory for the read buffer to store 1 piece */
 	read_buf = malloc(piece_length);
 
+	/* check if we've run out of memory */
+	if (hash_string == NULL || read_buf == NULL) {
+		fprintf(stderr, "Out of memory.\n");
+		exit(EXIT_FAILURE);
+	}
+
 	/* initiate pos to point to the beginning of hash_string */
 	pos = hash_string;
 	/* and initiate r to 0 since we haven't read anything yet */

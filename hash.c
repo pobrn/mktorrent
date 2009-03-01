@@ -183,6 +183,15 @@ unsigned char *make_hash()
 	piece2 = malloc(piece_length);
 	piece3 = malloc(piece_length);
 
+	/* check if we've run out of memory */
+	if (hash_string == NULL
+			|| piece1 == NULL
+			|| piece2 == NULL
+			|| piece3 == NULL) {
+		fprintf(stderr, "Out of memory.\n");
+		exit(EXIT_FAILURE);
+	}
+
 	/* the data_ready_mutex should be locked initially as there are
 	   no new pieces read yet */
 	pthread_mutex_lock(&data_ready_mutex);
