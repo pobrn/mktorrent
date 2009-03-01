@@ -55,9 +55,6 @@ static void write_file_list(FILE *f, fl_node list)
 
 	/* go through all the files */
 	for (; list; list = list->next) {
-#ifdef DEBUG
-		printf("Writing %s\n", list->path);
-#endif
 		/* the file list contains a dictionary for every file
 		   with entries for the length and path
 		   write the length first */
@@ -98,10 +95,6 @@ void write_metainfo(FILE *f, unsigned char *hash_string)
 	/* let the user know we've started writing the metainfo file */
 	printf("Writing metainfo file... ");
 	fflush(stdout);
-
-#ifdef DEBUG
-	printf("\n");
-#endif
 
 	/* every metainfo file is one big dictonary
 	   and the first entry is the announce url */
