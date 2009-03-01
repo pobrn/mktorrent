@@ -44,7 +44,7 @@ PREFIX  ?= /usr/local
 
 # Maximum number of file descriptors mktorrent will open when scanning the
 # directory. Default is 100, but I have no idea what a sane default
-# for this value is, so your number is probably better ;)
+# for this value is, so your number is probably better
 #MAX_OPENFD = 100
 
 # Don't strip the binary after its compiled
@@ -58,7 +58,7 @@ PREFIX  ?= /usr/local
 #-------------Nothing interesting below this line-----------------------------
 
 program := mktorrent
-version := 0.4
+version := 0.5
 
 HEADERS  = mktorrent.h
 SRCS    := init.c hash.c output.c main.c

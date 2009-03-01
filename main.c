@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
 	static FILE *file;	/* stream for writing to the metainfo file */
 
 	/* print who we are */
-	printf("mktorrent " VERSION " (c) 2007 Emil Renner Berthing\n\n");
+	printf("mktorrent " VERSION " (c) 2007, 2009 Emil Renner Berthing\n\n");
 
 	/* process options and initiate global variables */
 	init(argc, argv);
