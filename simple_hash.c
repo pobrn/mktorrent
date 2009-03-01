@@ -17,6 +17,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
 #include <stdlib.h>		/* exit() */
+#include <errno.h>		/* errno */
+#include <string.h>		/* strerror() */
 #include <stdio.h>		/* printf() etc. */
 #include <fcntl.h>		/* open() */
 #include <unistd.h>		/* read(), close() */
