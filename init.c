@@ -451,10 +451,10 @@ void init(int argc, char *argv[])
 
 	/* set the correct piece length.
 	   default is 2^18 = 256kb. */
-	if (piece_length < 15 || piece_length > 21) {
+	if (piece_length < 15 || piece_length > 25) {
 		fprintf(stderr,
 			"The piece length must be a number between "
-			"15 and 21.\n");
+			"15 and 25.\n");
 		exit(EXIT_FAILURE);
 	}
 	piece_length = 1 << piece_length;
