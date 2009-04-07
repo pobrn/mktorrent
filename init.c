@@ -16,6 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
+#ifndef ALLINONE
+
 #include <stdlib.h>		/* exit() */
 #include <errno.h>		/* errno */
 #include <string.h>		/* strerror() */
@@ -30,6 +32,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #endif
 
 #include "mktorrent.h"
+
+#define EXPORT
+#endif /* ALLINONE */
 
 #ifndef MAX_OPENFD
 #define MAX_OPENFD 100		/* Maximum no. of file descriptors ftw will open */
@@ -370,7 +375,7 @@ static void dump_options()
  * parse and check the command line options given
  * and initiate all the global variables
  */
-void init(int argc, char *argv[])
+EXPORT void init(int argc, char *argv[])
 {
 	int c;			/* return value of getopt() */
 	al_node announce_last = NULL;

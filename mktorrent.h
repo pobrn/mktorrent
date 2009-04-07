@@ -1,19 +1,5 @@
-#ifdef ALLINONE
-#include <stdlib.h>		/* exit() */
-#include <errno.h>		/* errno */
-#include <string.h>		/* strerror(), strlen() etc. */
-#include <stdio.h>		/* printf() etc. */
-#include <unistd.h>		/* access(), read(), close(), getcwd() */
-#include <getopt.h>		/* getopt_long() */
-#include <libgen.h>		/* basename() */
-#include <fcntl.h>		/* open() */
-#include <ftw.h>		/* ftw() */
-#include <time.h>		/* time() */
-#include <openssl/sha.h>	/* SHA1(), SHA_DIGEST_LENGTH */
-#ifndef NO_THREADS
-#include <pthread.h>		/* pthread functions and data structures */
-#endif
-#endif
+#ifndef _MKTORRENT_H
+#define _MKTORRENT_H
 
 /* string list */
 struct sl_node_s;
@@ -40,6 +26,8 @@ struct fl_node_s {
 	fl_node next;
 };
 
+#ifndef ALLINONE
+
 /* global variables */
 /* options */
 extern size_t piece_length;	/* piece length */
@@ -57,3 +45,7 @@ extern int verbose;		/* be verbose */
 extern unsigned long long size;	/* combined size of all files in the torrent */
 extern fl_node file_list;	/* list of files and their individual sizes */
 extern unsigned int pieces;	/* number of pieces */
+
+#endif /* ALLINONE */
+
+#endif /* _MKTORRENT_H */

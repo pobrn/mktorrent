@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
+#ifndef ALLINONE
 #include <stdlib.h>		/* exit(), malloc() */
 #include <errno.h>		/* errno */
 #include <string.h>		/* strerror() */
@@ -26,6 +27,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <pthread.h>		/* pthread functions and data structures */
 
 #include "mktorrent.h"
+
+#define EXPORT
+#endif /* ALLINONE */
+
 
 #ifndef PROGRESS_PERIOD
 #define PROGRESS_PERIOD 200000
@@ -161,7 +166,7 @@ static void *file_reader(void *data)
  * the SHA1 hash of every piece is concatenated into the hash string.
  * last piece may be shorter
  */
-unsigned char *make_hash()
+EXPORT unsigned char *make_hash()
 {
 
 	unsigned char *hash_string,	/* the hash string we're producing */

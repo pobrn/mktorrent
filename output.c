@@ -16,6 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
+#ifndef ALLINONE
+
 #include <stdlib.h>		/* off_t etc. */
 #include <stdio.h>		/* printf() etc. */
 #include <string.h>		/* strlen() etc. */
@@ -23,6 +25,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <openssl/sha.h>	/* SHA_DIGEST_LENGTH */
 
 #include "mktorrent.h"
+
+#define EXPORT
+#endif /* ALLINONE */
 
 /*
  * write announce list
@@ -90,7 +95,7 @@ static void write_file_list(FILE *f, fl_node list)
  * write metainfo to the file stream using all the information
  * we've gathered so far and the hash string calculated
  */
-void write_metainfo(FILE *f, unsigned char *hash_string)
+EXPORT void write_metainfo(FILE *f, unsigned char *hash_string)
 {
 	/* let the user know we've started writing the metainfo file */
 	printf("Writing metainfo file... ");

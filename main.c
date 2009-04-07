@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
+
 #include <stdlib.h>		/* exit() */
 #include <errno.h>		/* errno */
 #include <string.h>		/* strerror() */
@@ -23,34 +24,65 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <sys/stat.h>		/* S_IRUSR, S_IWUSR, S_IRGRP, S_IROTH */
 #include <fcntl.h>		/* open() */
 
+#ifdef ALLINONE
+
+#include <unistd.h>		/* access(), read(), close(), getcwd() */
+#include <getopt.h>		/* getopt_long() */
+#include <libgen.h>		/* basename() */
+#include <fcntl.h>		/* open() */
+#include <ftw.h>		/* ftw() */
+#include <time.h>		/* time() */
+#include <openssl/sha.h>	/* SHA1(), SHA_DIGEST_LENGTH */
+#ifndef NO_THREADS
+#include <pthread.h>		/* pthread functions and data structures */
+#endif /* NO_THREADS */
+
+#define EXPORT static
+#else
+#define EXPORT
+#endif /* ALLINONE */
+
 #include "mktorrent.h"
 
 /* global variables */
 /* options */
-size_t piece_length = 18;	/* 2^18 = 256kb by default */
-al_node announce_list = NULL;	/* announce URLs */
-char *torrent_name = NULL;	/* name of the torrent (name of directory) */
-char *metainfo_file_path;	/* absolute path to the metainfo file */
-char *web_seed_url = NULL;	/* web seed URL */
-char *comment = NULL;		/* optional comment to add to the metainfo */
-int target_is_directory = 0;	/* target is a directory not just a single file */
-int no_creation_date = 0;	/* don't write the creation date */
-int private = 0;		/* set the private flag */
-int verbose = 0;		/* be verbose */
+EXPORT size_t piece_length = 18;        /* 2^18 = 256kb by default */
+EXPORT al_node announce_list = NULL;    /* announce URLs */
+EXPORT char *torrent_name = NULL; /* name of the torrent (name of directory) */
+EXPORT char *metainfo_file_path;        /* absolute path to the metainfo file */
+EXPORT char *web_seed_url = NULL;       /* web seed URL */
+EXPORT char *comment = NULL;            /* optional comment to add to the metainfo */
+EXPORT int target_is_directory = 0;     /* target is a directory
+                                           not just a single file */
+EXPORT int no_creation_date = 0;        /* don't write the creation date */
+EXPORT int private = 0;                 /* set the private flag */
+EXPORT int verbose = 0;                 /* be verbose */
 
 /* information calculated by read_dir() */
-unsigned long long size = 0;	/* the combined size of all files in the torrent */
-fl_node file_list = NULL;	/* linked list of files and their individual sizes */
-unsigned int pieces;		/* number of pieces */
+EXPORT unsigned long long size = 0;	/* the combined size of all files
+					   in the torrent */
+EXPORT fl_node file_list = NULL;	/* linked list of files and
+					   their individual sizes */
+EXPORT unsigned int pieces;		/* number of pieces */
 
+#ifdef ALLINONE
+#include "init.c"
+
+#ifdef NO_THREADS
+#include "simple_hash.c"
+#else
+#include "hash.c"
+#endif /* NO_THREADS */
+
+#include "output.c"
+#else
 /* init.c */
 extern void init(int argc, char *argv[]);
-
 /* hash.c */
 extern unsigned char *make_hash();
-
 /* output.c */
 extern void write_metainfo(FILE * file, unsigned char *hash_string);
+#endif /* ALLINONE */
 
 /*
  * create and open the metainfo file for writing and create a stream for it

@@ -96,9 +96,7 @@ $(program): $(OBJS)
 	$(CC) $(CFLAGS) $^ -o $(program) $(LDFLAGS)
 
 allinone: $(SRCS) $(HEADERS)
-	cat $(SRCS) | sed "s/#include .*//" | cat $(HEADERS) - | sed "s/^extern //;s/^static //" > allinone.c
-	$(CC) $(CFLAGS) -DALLINONE allinone.c -o $(program) $(LDFLAGS)
-	rm -f allinone.c
+	$(CC) $(CFLAGS) -DALLINONE main.c -o $(program) $(LDFLAGS)
 
 strip:
 	strip $(program)

@@ -16,6 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
+#ifndef ALLINONE
+
 #include <stdlib.h>		/* exit() */
 #include <errno.h>		/* errno */
 #include <string.h>		/* strerror() */
@@ -26,13 +28,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 #include "mktorrent.h"
 
+#define EXPORT
+#endif /* ALLINONE */
+
 /*
  * go through the files in file_list, split their contents into pieces
  * of size piece_length and create the hash string, which is the
  * concatenation of the (20 byte) SHA1 hash of every piece
  * last piece may be shorter
  */
-unsigned char *make_hash()
+EXPORT unsigned char *make_hash()
 {
 	fl_node p;		/* pointer to a place in the file list */
 	unsigned char *hash_string;	/* the hash string */
