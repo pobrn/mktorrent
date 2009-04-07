@@ -27,8 +27,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #ifdef ALLINONE
 
 #include <unistd.h>		/* access(), read(), close(), getcwd() */
+#ifndef NO_LONG_OPTIONS
 #include <getopt.h>		/* getopt_long() */
-#include <libgen.h>		/* basename() */
+#endif /* NO_LONG_OPTIONS */
 #include <fcntl.h>		/* open() */
 #include <ftw.h>		/* ftw() */
 #include <time.h>		/* time() */

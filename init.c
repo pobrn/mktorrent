@@ -26,10 +26,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <unistd.h>		/* getopt(), getcwd() */
 #include <string.h>		/* strcmp(), strlen(), strncpy() */
 #include <ftw.h>		/* ftw() */
-#include <libgen.h>		/* basename() */
 #ifndef NO_LONG_OPTIONS
 #include <getopt.h>		/* getopt_long() */
-#endif
+#endif /* NO_LONG_OPTIONS */
 
 #include "mktorrent.h"
 
@@ -39,6 +38,20 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #ifndef MAX_OPENFD
 #define MAX_OPENFD 100		/* Maximum no. of file descriptors ftw will open */
 #endif
+
+static const char *basename(const char *s)
+{
+	const char *r = s;
+
+	while (*s != '\0') {
+		if (*s == DIRSEP_CHAR)
+			r = ++s;
+		else
+			++s;
+	}
+
+	return r;
+}
 
 /*
  * returns the absolute path to the metainfo file
