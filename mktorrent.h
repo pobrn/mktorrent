@@ -1,6 +1,14 @@
 #ifndef _MKTORRENT_H
 #define _MKTORRENT_H
 
+#ifdef _WIN32
+#define DIRSEP      "\\"
+#define DIRSEP_CHAR '\\'
+#else
+#define DIRSEP      "/"
+#define DIRSEP_CHAR '/'
+#endif
+
 /* string list */
 struct sl_node_s;
 typedef struct sl_node_s *sl_node;

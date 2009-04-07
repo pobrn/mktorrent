@@ -70,14 +70,14 @@ static void write_file_list(FILE *f, fl_node list)
 		   sorry this code is even uglier than the rest */
 		a = list->path;
 		/* while there are subdirectories before the filename.. */
-		while ((b = index(a, '/')) != NULL) {
-			/* set the next '/' to '\0' so fprintf
+		while ((b = index(a, DIRSEP_CHAR)) != NULL) {
+			/* set the next DIRSEP_CHAR to '\0' so fprintf
 			   will only write the first subdirectory name */
 			*b = '\0';
 			/* print it bencoded */
 			fprintf(f, "%zu:%s", strlen(a), a);
 			/* undo our alteration to the string */
-			*b = '/';
+			*b = DIRSEP_CHAR;
 			/* and move a to the beginning of the next
 			   subdir or filename */
 			a = b + 1;

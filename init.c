@@ -51,7 +51,7 @@ static char *get_absolute_file_path(char *file_path, const char *torrent_name)
 
 	/* if the file_path is already an absolute path just
 	   return that */
-	if (file_path && *file_path == '/')
+	if (file_path && *file_path == DIRSEP_CHAR)
 		return file_path;
 
 	/* first get the current working directory
@@ -87,7 +87,7 @@ static char *get_absolute_file_path(char *file_path, const char *torrent_name)
 			fprintf(stderr, "Out of memory.\n");
 			exit(EXIT_FAILURE);
 		}
-		sprintf(string + length, "/%s.torrent", torrent_name);
+		sprintf(string + length, DIRSEP "%s.torrent", torrent_name);
 	} else {
 		/* otherwise append the torrent path to the working dir */
 		string =
@@ -97,7 +97,7 @@ static char *get_absolute_file_path(char *file_path, const char *torrent_name)
 			fprintf(stderr, "Out of memory.\n");
 			exit(EXIT_FAILURE);
 		}
-		sprintf(string + length, "/%s", metainfo_file_path);
+		sprintf(string + length, DIRSEP "%s", metainfo_file_path);
 	}
 
 	/* return the string */
@@ -263,7 +263,7 @@ static void read_dir(const char *dir)
 	/* now process all the files in it
 	   process_node() will take care of creating the file list
 	   and counting the size of all the files */
-	if (ftw("./", process_node, MAX_OPENFD)) {
+	if (ftw("." DIRSEP, process_node, MAX_OPENFD)) {
 		fprintf(stderr, "Error scanning directory: %s\n",
 				strerror(errno));
 		exit(EXIT_FAILURE);
