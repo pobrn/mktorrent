@@ -32,23 +32,20 @@ PREFIX  ?= /usr/local
 #NO_LONG_OPTIONS = 1
 
 # Disable a redundent check to see if the amount of bytes read from files
-# when calculating their hash strings matches the sum of reported file sizes.
-# I've never seen this fail. It will fail if you start deleting or altering
-# files yet to be hashed while mktorrent is running, but who'd want to do that?
+# while hashing matches the sum of reported file sizes. I've never seen
+# this fail. It will fail if you change files yet to be hashed while
+# mktorrent is running, but who'd want to do that?
 #NO_HASH_CHECK = 1
 
-# Set the number of micro seconds mktorrent will wait between every progress
-# report when hashing multi threaded. Default is 200000 that is 0.2 seconds
+# Set the number of microseconds mktorrent will wait between every progress
+# report when hashing multithreaded. Default is 200000, that is 0.2 seconds
 # between every update.
 #PROGRESS_PERIOD = 200000
 
 # Maximum number of file descriptors mktorrent will open when scanning the
 # directory. Default is 100, but I have no idea what a sane default
-# for this value is, so your number is probably better
+# for this value is, so your number is probably better.
 #MAX_OPENFD = 100
-
-# Don't strip the binary after its compiled
-#DONT_STRIP = 1
 
 # Enable leftover debugging code.
 # Usually just spams you with lots of useless information.
@@ -88,7 +85,7 @@ override DEFINES += -DVERSION="\"$(version)\""
 override CFLAGS  += $(DEFINES)
 override LDFLAGS += $(LIBS)
 
-.PHONY: all indent clean install uninstall
+.PHONY: all strip indent clean install uninstall
 
 all: $(program)
 
@@ -97,17 +94,14 @@ all: $(program)
 
 $(program): $(OBJS)
 	$(CC) $(CFLAGS) $^ -o $(program) $(LDFLAGS)
-ifndef DONT_STRIP
-	strip $(program)
-endif
 
 allinone: $(SRCS) $(HEADERS)
 	cat $(SRCS) | sed "s/#include .*//" | cat $(HEADERS) - | sed "s/^extern //;s/^static //" > allinone.c
 	$(CC) $(CFLAGS) -DALLINONE allinone.c -o $(program) $(LDFLAGS)
 	rm -f allinone.c
-ifndef DONT_STRIP
+
+strip:
 	strip $(program)
-endif
 
 indent:
 	indent -kr -i8 *.c *.h
