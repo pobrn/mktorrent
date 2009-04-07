@@ -44,7 +44,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  * returns the absolute path to the metainfo file
  * if file_path is NULL use <torrent name>.torrent as file name
  */
-static char *get_absolute_file_path(char *file_path, char *torrent_name)
+static char *get_absolute_file_path(char *file_path, const char *torrent_name)
 {
 	char *string;		/* string to return */
 	size_t length = 32;	/* length of the string */

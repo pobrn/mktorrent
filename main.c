@@ -48,7 +48,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 /* options */
 EXPORT size_t piece_length = 18;        /* 2^18 = 256kb by default */
 EXPORT al_node announce_list = NULL;    /* announce URLs */
-EXPORT char *torrent_name = NULL; /* name of the torrent (name of directory) */
+EXPORT const char *torrent_name = NULL; /* name of the torrent (name of directory) */
 EXPORT char *metainfo_file_path;        /* absolute path to the metainfo file */
 EXPORT char *web_seed_url = NULL;       /* web seed URL */
 EXPORT char *comment = NULL;            /* optional comment to add to the metainfo */
