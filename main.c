@@ -26,13 +26,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 #ifdef ALLINONE
 
+#include <sys/stat.h>
 #include <unistd.h>		/* access(), read(), close(), getcwd() */
 #ifndef NO_LONG_OPTIONS
 #include <getopt.h>		/* getopt_long() */
 #endif /* NO_LONG_OPTIONS */
-#include <fcntl.h>		/* open() */
-#include <ftw.h>		/* ftw() */
 #include <time.h>		/* time() */
+#include <dirent.h>		/* opendir(), closedir(), readdir() etc. */
 #include <openssl/sha.h>	/* SHA1(), SHA_DIGEST_LENGTH */
 #ifndef NO_THREADS
 #include <pthread.h>		/* pthread functions and data structures */
@@ -67,6 +67,7 @@ EXPORT fl_node file_list = NULL;	/* linked list of files and
 EXPORT unsigned int pieces;		/* number of pieces */
 
 #ifdef ALLINONE
+#include "ftw.c"
 #include "init.c"
 
 #ifdef NO_THREADS

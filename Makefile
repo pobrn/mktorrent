@@ -58,7 +58,7 @@ program := mktorrent
 version := 0.5
 
 HEADERS  = mktorrent.h
-SRCS    := init.c hash.c output.c main.c
+SRCS    := ftw.c init.c hash.c output.c main.c
 OBJS     = $(SRCS:.c=.o)
 LIBS    := -lssl
 

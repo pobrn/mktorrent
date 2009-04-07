@@ -25,12 +25,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <sys/stat.h>		/* the stat structure */
 #include <unistd.h>		/* getopt(), getcwd() */
 #include <string.h>		/* strcmp(), strlen(), strncpy() */
-#include <ftw.h>		/* ftw() */
 #ifndef NO_LONG_OPTIONS
 #include <getopt.h>		/* getopt_long() */
 #endif /* NO_LONG_OPTIONS */
 
 #include "mktorrent.h"
+#include "ftw.h"
 
 #define EXPORT
 #endif /* ALLINONE */
@@ -209,22 +209,21 @@ static int is_dir(char *target)
  * counts the number of (readable) files, their commulative size and adds
  * their names and individual sizes to the file list
  */
-static int process_node(const char *path, const struct stat *sb,
-			int typeflag)
+static int process_node(const char *path, const struct stat *sb, void *data)
 {
 	fl_node *p;		/* pointer to a node in the file list */
 	fl_node new_node;	/* place to store a newly created node */
 
-	/* skip directories */
-	if (typeflag == FTW_D)
+	/* skip non-regular files */
+	if (!S_ISREG(sb->st_mode))
 		return 0;
 
 	/* ignore the leading "./" */
 	path += 2;
 
-	/* now path should be a normal file and readable
-	   otherwise display a warning and skip it */
-	if (typeflag != FTW_F || access(path, R_OK)) {
+	/* now path should be readable otherwise
+	 * display a warning and skip it */
+	if (access(path, R_OK)) {
 		fprintf(stderr, "Warning: Cannot read '%s', skipping.\n", path);
 		return 0;
 	}
@@ -245,7 +244,7 @@ static int process_node(const char *path, const struct stat *sb,
 	new_node = malloc(sizeof(struct fl_node_s));
 	if (new_node == NULL) {
 		fprintf(stderr, "Out of memory.\n");
-		exit(EXIT_FAILURE);
+		return -1;
 	}
 	new_node->path = strdup(path);
 	new_node->size = sb->st_size;
@@ -276,11 +275,8 @@ static void read_dir(const char *dir)
 	/* now process all the files in it
 	   process_node() will take care of creating the file list
 	   and counting the size of all the files */
-	if (ftw("." DIRSEP, process_node, MAX_OPENFD)) {
-		fprintf(stderr, "Error scanning directory: %s\n",
-				strerror(errno));
+	if (file_tree_walk("." DIRSEP, MAX_OPENFD, process_node, NULL))
 		exit(EXIT_FAILURE);
-	}
 }
 
 /*
