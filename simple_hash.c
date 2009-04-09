@@ -24,7 +24,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <stdio.h>		/* printf() etc. */
 #include <fcntl.h>		/* open() */
 #include <unistd.h>		/* read(), close() */
+
+#ifdef USE_OPENSSL
 #include <openssl/sha.h>	/* SHA1() - remember to compile with -lssl */
+#else
+#include <stdint.h>
+#include "sha1.h"
+#endif
 
 #include "mktorrent.h"
 
@@ -46,6 +52,7 @@ EXPORT unsigned char *make_hash()
 	int fd;			/* file descriptor */
 	ssize_t r;		/* number of bytes read from file(s) into
 				   the read buffer */
+	SHA_CTX c;		/* SHA1 hashing context */
 #ifndef NO_HASH_CHECK
 	unsigned long long counter = 0;	/* number of bytes hashed
 					   should match size when done */
@@ -85,7 +92,9 @@ EXPORT unsigned char *make_hash()
 		   to the end of the file */
 		while ((r += read(fd, read_buf + r, piece_length - r))
 		       == piece_length) {
-			SHA1(read_buf, piece_length, pos);
+			SHA1_Init(&c);
+			SHA1_Update(&c, read_buf, piece_length);
+			SHA1_Final(pos, &c);
 			pos += SHA_DIGEST_LENGTH;
 #ifndef NO_HASH_CHECK
 			counter += r;	/* r == piece_length */
@@ -102,7 +111,9 @@ EXPORT unsigned char *make_hash()
 	}
 
 	/* finally append the hash of the last irregular piece to the hash string */
-	SHA1(read_buf, r, pos);
+	SHA1_Init(&c);
+	SHA1_Update(&c, read_buf, r);
+	SHA1_Final(pos, &c);
 
 #ifndef NO_HASH_CHECK
 	counter += r;

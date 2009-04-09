@@ -27,6 +27,9 @@ PREFIX  ?= /usr/local
 # as we can't read from the harddisk and calculate hashes simultaneously.
 #NO_THREADS = 1
 
+# Use the SHA1 implementation in the OpenSSL library
+#USE_OPENSSL = 1
+
 # Disable support for long options. Will make the program smaller
 # and perhaps even more portable.
 #NO_LONG_OPTIONS = 1
@@ -58,9 +61,9 @@ program := mktorrent
 version := 0.5
 
 HEADERS  = mktorrent.h
-SRCS    := ftw.c init.c hash.c output.c main.c
+SRCS    := ftw.c init.c sha1.c hash.c output.c main.c
 OBJS     = $(SRCS:.c=.o)
-LIBS    := -lssl
+LIBS    :=
 
 ifdef NO_THREADS
 DEFINES += -DNO_THREADS
@@ -68,6 +71,13 @@ SRCS := $(SRCS:hash.c=simple_hash.c)
 else
 LIBS += -lpthread
 endif
+
+ifdef USE_OPENSSL
+DEFINES += -DUSE_OPENSSL
+SRCS := $(SRCS:sha1.c=)
+LIBS += -lssl
+endif
+
 
 ifdef NO_LONG_OPTIONS
 DEFINES += -DNO_LONG_OPTIONS

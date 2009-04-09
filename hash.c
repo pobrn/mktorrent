@@ -23,7 +23,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <stdio.h>		/* printf() etc. */
 #include <fcntl.h>		/* open() */
 #include <unistd.h>		/* access(), read(), close() */
+#ifdef USE_OPENSSL
 #include <openssl/sha.h>	/* SHA1() - remember to compile with -lssl */
+#else
+#include <stdint.h>
+#include "sha1.h"
+#endif
 #include <pthread.h>		/* pthread functions and data structures */
 
 #include "mktorrent.h"
@@ -83,7 +88,7 @@ static void *print_progress(void *data)
 		/* print progress and flush the buffer immediately */
 		printf("\rHashed %u/%u pieces.", pieces_done, pieces);
 		fflush(stdout);
-		/* now sleep for PROGRESS_PERIOD micro seconds */
+		/* now sleep for PROGRESS_PERIOD microseconds */
 		usleep(PROGRESS_PERIOD);
 	}
 	return NULL;
@@ -170,13 +175,14 @@ EXPORT unsigned char *make_hash()
 {
 
 	unsigned char *hash_string,	/* the hash string we're producing */
-	*pos,			/* where in hash_string to put the
-				   hash of the next piece */
-	*piece,			/* the current piece we're hashing */
+	*pos,				/* where in hash_string to put the
+					   hash of the next piece */
+	*piece,				/* the current piece we're hashing */
 	*piece1, *piece2, *piece3;	/* allocated piece buffers */
-	pthread_t print_progress_thread;	/* progress printer thread */
+	pthread_t print_progress_thread;/* progress printer thread */
 	pthread_t file_reader_thread;	/* file reader thread */
-	unsigned long last_piece_length;	/* length of last piece */
+	unsigned long last_piece_length;/* length of last piece */
+	SHA_CTX c;			/* SHA1 context */
 
 
 	/* allocate memory for the hash string and set pos to point
@@ -217,7 +223,9 @@ EXPORT unsigned char *make_hash()
 		piece = get_piece(piece);
 		/* calculate the SHA1 hash of the piece and write it
 		   the right place in the hash string */
-		SHA1(piece, piece_length, pos);
+		SHA1_Init(&c);
+		SHA1_Update(&c, piece, piece_length);
+		SHA1_Final(pos, &c);
 		/* next hash should be written 20 bytes further ahead */
 		pos += SHA_DIGEST_LENGTH;
 		/* yeih! one piece done */
@@ -232,7 +240,9 @@ EXPORT unsigned char *make_hash()
 		last_piece_length = piece_length;
 
 	/* now write its hash to the hash string */
-	SHA1(piece, last_piece_length, pos);
+	SHA1_Init(&c);
+	SHA1_Update(&c, piece, last_piece_length);
+	SHA1_Final(pos, &c);
 	/* yeih! we're done */
 	pieces_done++;
 	/* ..so stop printing our progress. */

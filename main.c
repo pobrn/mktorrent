@@ -33,7 +33,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #endif /* NO_LONG_OPTIONS */
 #include <time.h>		/* time() */
 #include <dirent.h>		/* opendir(), closedir(), readdir() etc. */
+#ifdef USE_OPENSSL
 #include <openssl/sha.h>	/* SHA1(), SHA_DIGEST_LENGTH */
+#else
+#include <stdint.h>
+#endif
 #ifndef NO_THREADS
 #include <pthread.h>		/* pthread functions and data structures */
 #endif /* NO_THREADS */
@@ -69,6 +73,10 @@ EXPORT unsigned int pieces;		/* number of pieces */
 #ifdef ALLINONE
 #include "ftw.c"
 #include "init.c"
+
+#ifndef USE_OPENSSL
+#include "sha1.c"
+#endif
 
 #ifdef NO_THREADS
 #include "simple_hash.c"
