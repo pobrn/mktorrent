@@ -87,6 +87,10 @@ ifdef NO_HASH_CHECK
 DEFINES += -DNO_HASH_CHECK
 endif
 
+ifdef MAX_OPENFD
+DEFINES += -DMAX_OPENFD="$(MAX_OPENFD)"
+endif
+
 ifdef DEBUG
 DEFINES += -DDEBUG
 endif

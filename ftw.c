@@ -40,7 +40,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 struct dir_state {
 	struct dir_state *next;
 	struct dir_state *prev;
-	char *end;
+	size_t length;
 	DIR *dir;
 	off_t offset;
 };
@@ -51,7 +51,7 @@ static struct dir_state *dir_state_new(struct dir_state *prev,
 	struct dir_state *ds = malloc(sizeof(struct dir_state));
 
 	if (ds == NULL) {
-		fprintf(stderr, "Out of memory\n");
+		fprintf(stderr, "Out of memory.\n");
 		return NULL;
 	}
 
@@ -62,7 +62,7 @@ static struct dir_state *dir_state_new(struct dir_state *prev,
 }
 
 static unsigned int dir_state_open(struct dir_state *ds, const char *name,
-		char *end)
+		size_t length)
 {
 	ds->dir = opendir(name);
 	if (ds->dir == NULL) {
@@ -71,14 +71,14 @@ static unsigned int dir_state_open(struct dir_state *ds, const char *name,
 		return 1;
 	}
 
-	ds->end = end;
+	ds->length = length;
 
 	return 0;
 }
 
-static unsigned int dir_state_reopen(struct dir_state *ds, const char *name)
+static unsigned int dir_state_reopen(struct dir_state *ds, char *name)
 {
-	*ds->end = '\0';
+	name[ds->length] = '\0';
 	ds->dir = opendir(name);
 	if (ds->dir == NULL) {
 		fprintf(stderr, "Error opening '%s': %s\n",
@@ -86,7 +86,7 @@ static unsigned int dir_state_reopen(struct dir_state *ds, const char *name)
 		return 1;
 	}
 
-	*ds->end = DIRSEP_CHAR;
+	name[ds->length] = DIRSEP_CHAR;
 
 	seekdir(ds->dir, ds->offset);
 
@@ -113,7 +113,7 @@ static unsigned int dir_state_close(struct dir_state *ds)
 	return 0;
 }
 
-static unsigned int dir_state_destroyall(struct dir_state *ds, int ret)
+static unsigned int cleanup(struct dir_state *ds, char *path, int ret)
 {
 	while (ds->prev)
 		ds = ds->prev;
@@ -124,13 +124,18 @@ static unsigned int dir_state_destroyall(struct dir_state *ds, int ret)
 		ds = next;
 	} while (ds);
 
+	if (path)
+		free(path);
+
 	return ret;
 }
 
 EXPORT int file_tree_walk(const char *dirname, unsigned int nfds,
 		file_tree_walk_cb callback, void *data)
 {
-	char path[PATH_MAX];
+	size_t path_size = 256;
+	char *path;
+	char *path_max;
 	char *end;
 	struct dir_state *ds = dir_state_new(NULL, NULL);
 	struct dir_state *first_open;
@@ -139,11 +144,31 @@ EXPORT int file_tree_walk(const char *dirname, unsigned int nfds,
 	if (ds == NULL)
 		return -1;
 
+	path = malloc(path_size);
+	if (path == NULL) {
+		fprintf(stderr, "Out of memory.\n");
+		return cleanup(ds, NULL, -1);
+	}
+	path_max = path + path_size;
+
 	/* copy dirname to path */
 	end = path;
 	while ((*end = *dirname)) {
 		dirname++;
 		end++;
+		if (end == path_max) {
+			char *new_path;
+
+			new_path = realloc(path, 2*path_size);
+			if (new_path == NULL) {
+				fprintf(stderr, "Out of memory.\n");
+				return cleanup(ds, path, -1);
+			}
+			end = new_path + path_size;
+			path_size *= 2;
+			path = new_path;
+			path_max = path + path_size;
+		}
 	}
 
 	/* strip ending directory separators */
@@ -152,8 +177,8 @@ EXPORT int file_tree_walk(const char *dirname, unsigned int nfds,
 		*end = '\0';
 	}
 
-	if (dir_state_open(ds, path, end))
-		return dir_state_destroyall(ds, -1);
+	if (dir_state_open(ds, path, end - path))
+		return cleanup(ds, path, -1);
 
 	first_open = ds;
 	nopen = 1;
@@ -175,50 +200,63 @@ EXPORT int file_tree_walk(const char *dirname, unsigned int nfds,
 				continue;
 			}
 
-			end = ds->end + 1;
+			end = path + ds->length + 1;
 			p = de->d_name;
 			while ((*end = *p)) {
 				p++;
 				end++;
+				if (end == path_max) {
+					char *new_path;
+
+					new_path = realloc(path, 2*path_size);
+					if (new_path == NULL) {
+						fprintf(stderr, "Out of memory.\n");
+						return cleanup(ds, path, -1);
+					}
+					end = new_path + path_size;
+					path_size *= 2;
+					path = new_path;
+					path_max = path + path_size;
+				}
 			}
 
 			if (stat(path, &sbuf)) {
 				fprintf(stderr, "Error stat'ing '%s': %s\n",
 						path, strerror(errno));
-				return dir_state_destroyall(ds, -1);
+				return cleanup(ds, path, -1);
 			}
 
 			r = callback(path, &sbuf, data);
 			if (r)
-				return dir_state_destroyall(ds, r);
+				return cleanup(ds, path, r);
 
 			if (S_ISDIR(sbuf.st_mode)) {
 				if (ds->next == NULL &&
 					(ds->next = dir_state_new(ds, NULL)) == NULL)
-					return dir_state_destroyall(ds, -1);
+					return cleanup(ds, path, -1);
 
 				ds = ds->next;
 
 				if (nopen == nfds) {
 					if (dir_state_close(first_open))
-						return dir_state_destroyall(ds, -1);
+						return cleanup(ds, path, -1);
 					first_open = first_open->next;
 					nopen--;
 				}
 
-				if (dir_state_open(ds, path, end))
-					return dir_state_destroyall(ds, -1);
+				if (dir_state_open(ds, path, end - path))
+					return cleanup(ds, path, -1);
 
 				nopen++;
 
-				*ds->end = DIRSEP_CHAR;
+				*end = DIRSEP_CHAR;
 			}
 		} else {
 			if (closedir(ds->dir)) {
-				*ds->end = '\0';
+				path[ds->length] = '\0';
 				fprintf(stderr, "Error closing '%s': %s\n",
 					path, strerror(errno));
-				return dir_state_destroyall(ds, -1);
+				return cleanup(ds, path, -1);
 			}
 
 			if (ds->prev == NULL)
@@ -229,12 +267,12 @@ EXPORT int file_tree_walk(const char *dirname, unsigned int nfds,
 
 			if (ds->dir == NULL) {
 				if (dir_state_reopen(ds, path))
-					return dir_state_destroyall(ds, -1);
+					return cleanup(ds, path, -1);
 				first_open = ds;
 				nopen++;
 			}
 		}
 	}
 
-	return dir_state_destroyall(ds, 0);
+	return cleanup(ds, path, 0);
 }
