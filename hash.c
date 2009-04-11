@@ -41,42 +41,118 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #define PROGRESS_PERIOD 200000
 #endif
 
-static unsigned int pieces_done = 0;	/* pieces processed so far */
-/* piece to be transferred between threads */
-static unsigned char *transfer_piece;
-/* mutex only unlocked when transfer_piece contains a newly read piece */
-static pthread_mutex_t data_ready_mutex = PTHREAD_MUTEX_INITIALIZER;
-/* only unlocked when transfer_piece contains a piece already hashed */
-static pthread_mutex_t free_space_mutex = PTHREAD_MUTEX_INITIALIZER;
+struct piece_s;
+typedef struct piece_s piece_t;
+struct piece_s {
+	piece_t *next;
+	unsigned char *dest;
+	unsigned long len;
+	unsigned char data[1];
+};
 
-/*
- * deliver a free piece buffer and return a new piece to be hashed
- * thread safe
- */
-static unsigned char *get_piece(unsigned char *free_buffer)
+struct queue_s;
+typedef struct queue_s queue_t;
+struct queue_s {
+	piece_t *free;
+	piece_t *full;
+	unsigned int buffers_max;
+	unsigned int buffers;
+	pthread_mutex_t mutex_free;
+	pthread_mutex_t mutex_full;
+	pthread_cond_t cond_empty;
+	pthread_cond_t cond_full;
+	unsigned int done;
+	unsigned int pieces;
+	unsigned int pieces_hashed;
+};
+
+static piece_t *get_free(queue_t *q, size_t piece_length)
 {
-	unsigned char *buf;
+	piece_t *r;
 
-	pthread_mutex_lock(&data_ready_mutex);
-	buf = transfer_piece;
-	transfer_piece = free_buffer;
-	pthread_mutex_unlock(&free_space_mutex);
-	return buf;
+	pthread_mutex_lock(&q->mutex_free);
+	if (q->free) {
+		r = q->free;
+		q->free = r->next;
+	} else if (q->buffers < q->buffers_max) {
+		r = malloc(sizeof(piece_t) + piece_length - 1);
+		if (r == NULL) {
+			fprintf(stderr, "Out of memory.\n");
+			exit(EXIT_FAILURE);
+		}
+
+		q->buffers++;
+	} else {
+		while (q->free == NULL) {
+			pthread_cond_wait(&q->cond_full, &q->mutex_free);
+		}
+
+		r = q->free;
+		q->free = r->next;
+	}
+	pthread_mutex_unlock(&q->mutex_free);
+
+	return r;
 }
 
-/*
- * deliver a newly read piece to be hashed and return a free piece buffer
- * thread safe
- */
-static unsigned char *deliver_piece(unsigned char *piece)
+static piece_t *get_full(queue_t *q)
 {
-	unsigned char *buf;
+	piece_t *r;
 
-	pthread_mutex_lock(&free_space_mutex);
-	buf = transfer_piece;
-	transfer_piece = piece;
-	pthread_mutex_unlock(&data_ready_mutex);
-	return buf;
+	pthread_mutex_lock(&q->mutex_full);
+again:
+	if (q->full) {
+		r = q->full;
+		q->full = r->next;
+	} else if (q->done) {
+		r = NULL;
+	} else {
+		pthread_cond_wait(&q->cond_empty, &q->mutex_full);
+		goto again;
+	}
+	pthread_mutex_unlock(&q->mutex_full);
+
+	return r;
+}
+
+static void put_free(queue_t *q, piece_t *p)
+{
+	pthread_mutex_lock(&q->mutex_free);
+	p->next = q->free;
+	q->free = p;
+	q->pieces_hashed++;
+	pthread_mutex_unlock(&q->mutex_free);
+	pthread_cond_signal(&q->cond_full);
+}
+
+static void put_full(queue_t *q, piece_t *p)
+{
+	pthread_mutex_lock(&q->mutex_full);
+	p->next = q->full;
+	q->full = p;
+	pthread_mutex_unlock(&q->mutex_full);
+	pthread_cond_signal(&q->cond_empty);
+}
+
+static void set_done(queue_t *q)
+{
+	pthread_mutex_lock(&q->mutex_full);
+	q->done = 1;
+	pthread_mutex_unlock(&q->mutex_full);
+	pthread_cond_broadcast(&q->cond_empty);
+}
+
+static void free_buffers(queue_t *q)
+{
+	piece_t *first = q->free;
+
+	while (first) {
+		piece_t *p = first;
+		first = p->next;
+		free(p);
+	}
+
+	q->free = NULL;
 }
 
 /*
@@ -84,75 +160,105 @@ static unsigned char *deliver_piece(unsigned char *piece)
  */
 static void *print_progress(void *data)
 {
+	queue_t *q = data;
+	int err;
+
+	err = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
+	if (err) {
+		fprintf(stderr, "Error setting thread cancel type: %s\n",
+				strerror(err));
+		exit(EXIT_FAILURE);
+	}
+
 	while (1) {
 		/* print progress and flush the buffer immediately */
-		printf("\rHashed %u/%u pieces.", pieces_done, pieces);
+		printf("\rHashed %u of %u pieces.", q->pieces_hashed, q->pieces);
 		fflush(stdout);
 		/* now sleep for PROGRESS_PERIOD microseconds */
 		usleep(PROGRESS_PERIOD);
 	}
+
 	return NULL;
 }
 
-/*
- * this thread goes through all the files in the torrent, reads their
- * content in pieces of piece_length and deliver them to the hashing thread
- */
-static void *file_reader(void *data)
+static void *worker(void *data)
 {
-	/* current piece buffer to fill with data from files */
-	unsigned char *piece = (unsigned char *) data;
-	fl_node p;		/* pointer to a place in the file list */
-	int fd;			/* file descriptor */
-	ssize_t r = 0;		/* number of bytes read from file(s) into
-				   the current piece buffer */
+	queue_t *q = data;
+	piece_t *p;
+	SHA_CTX c;
+
+	while ((p = get_full(q))) {
+		SHA1_Init(&c);
+		SHA1_Update(&c, p->data, p->len);
+		SHA1_Final(p->dest, &c);
+		put_free(q, p);
+	}
+
+	return NULL;
+}
+
+static void read_files(queue_t *q, unsigned char *pos)
+{
+	int fd;					/* file descriptor */
+	fl_node f;				/* pointer to a place in the file
+						   list */
+	ssize_t r = 0;				/* number of bytes read from
+						   file(s) into the read buffer */
 #ifndef NO_HASH_CHECK
-	unsigned long long counter = 0;	/* number of bytes hashed
-					   should match size when done */
+	unsigned long long counter = 0;		/* number of bytes hashed
+						   should match size when done */
 #endif
+	piece_t *p = get_free(q, piece_length);
 
 	/* go through all the files in the file list */
-	for (p = file_list; p; p = p->next) {
+	for (f = file_list; f; f = f->next) {
 
 		/* open the current file for reading */
-		if ((fd = open(p->path, O_RDONLY)) == -1) {
-			fprintf(stderr,	"Error opening '%s' for reading: %s\n",
-					p->path, strerror(errno));
+		if ((fd = open(f->path, O_RDONLY)) == -1) {
+			fprintf(stderr, "Error opening '%s' for reading: %s\n",
+					f->path, strerror(errno));
 			exit(EXIT_FAILURE);
 		}
 
-		/* fill the buffer with the contents of the file and deliver
-		   it to the hashing thread.
-		   repeat until we can't fill the buffer and we've thus come
-		   to the end of the file */
-		while ((r += read(fd, piece + r, piece_length - r))
-		       == piece_length) {
-			/* deliver the piece and get a new empty buffer */
-			piece = deliver_piece(piece);
+		while (1) {
+			ssize_t d = read(fd, p->data + r, piece_length - r);
+
+			if (d < 0) {
+				fprintf(stderr, "Error reading from '%s': %s\n",
+						f->path, strerror(errno));
+				exit(EXIT_FAILURE);
+			}
+
+			r += d;
+
+			if (r < piece_length)
+				break;
+
+			p->dest = pos;
+			p->len = piece_length;
+			put_full(q, p);
+			pos += SHA_DIGEST_LENGTH;
 #ifndef NO_HASH_CHECK
-			/* count the number of bytes read from files */
-			counter += r;	/* r == piece_length */
+			counter += r;
 #endif
-			/* buffer is now empty and we can start
-			   filling it again */
 			r = 0;
+			p = get_free(q, piece_length);
 		}
 
 		/* now close the file */
 		if (close(fd)) {
 			fprintf(stderr, "Error closing '%s': %s\n",
-					p->path, strerror(errno));
+					f->path, strerror(errno));
 			exit(EXIT_FAILURE);
 		}
 	}
 
-	/* deliver the last irregular sized piece, if there is one */
-	if (r != 0)
-		deliver_piece(piece);
+	/* finally append the hash of the last irregular piece to the hash string */
+	p->dest = pos;
+	p->len = r;
+	put_full(q, p);
 
 #ifndef NO_HASH_CHECK
-	/* now add the last number of read bytes and check if the
-	   number of bytes read from files matches size */
 	counter += r;
 	if (counter != size) {
 		fprintf(stderr, "Counted %llu bytes, but hashed %llu bytes. "
@@ -160,103 +266,93 @@ static void *file_reader(void *data)
 		exit(EXIT_FAILURE);
 	}
 #endif
-
-	return NULL;
 }
 
-/*
- * allocate memory for the hash string and buffers,
- * initiate the progress printer and file reader threads then
- * then start hashing the pieces delivered by the file reader thread.
- * the SHA1 hash of every piece is concatenated into the hash string.
- * last piece may be shorter
- */
 EXPORT unsigned char *make_hash()
 {
+	queue_t q = {
+		NULL, NULL, 0, 0,
+		PTHREAD_MUTEX_INITIALIZER,
+		PTHREAD_MUTEX_INITIALIZER,
+		PTHREAD_COND_INITIALIZER,
+		PTHREAD_COND_INITIALIZER,
+		0, 0, 0
+	};
+	pthread_t print_progress_thread;	/* progress printer thread */
+	pthread_t *workers;
+	unsigned char *hash_string;		/* the hash string */
+	unsigned int i;
+	int err;
 
-	unsigned char *hash_string,	/* the hash string we're producing */
-	*pos,				/* where in hash_string to put the
-					   hash of the next piece */
-	*piece,				/* the current piece we're hashing */
-	*piece1, *piece2, *piece3;	/* allocated piece buffers */
-	pthread_t print_progress_thread;/* progress printer thread */
-	pthread_t file_reader_thread;	/* file reader thread */
-	unsigned long last_piece_length;/* length of last piece */
-	SHA_CTX c;			/* SHA1 context */
+	workers = alloca(threads * sizeof(pthread_t));
+	hash_string = malloc(pieces * SHA_DIGEST_LENGTH);
+	if (workers == NULL || hash_string == NULL)
+		return NULL;
 
+	q.pieces = pieces;
+	q.buffers_max = 3*threads;
 
-	/* allocate memory for the hash string and set pos to point
-	   to its beginning.
-	   every SHA1 hash is SHA_DIGEST_LENGTH (20) bytes long */
-	pos = hash_string = malloc(pieces * SHA_DIGEST_LENGTH);
-	/* allocate memory for 3 pieces */
-	piece1 = malloc(piece_length);
-	piece2 = malloc(piece_length);
-	piece3 = malloc(piece_length);
+	/* create worker threads */
+	for (i = 0; i < threads; i++) {
+		err = pthread_create(&workers[i], NULL, worker, &q);
+		if (err) {
+			fprintf(stderr, "Error creating thread: %s\n",
+					strerror(err));
+			exit(EXIT_FAILURE);
+		}
+	}
 
-	/* check if we've run out of memory */
-	if (hash_string == NULL
-			|| piece1 == NULL
-			|| piece2 == NULL
-			|| piece3 == NULL) {
-		fprintf(stderr, "Out of memory.\n");
+	/* now set off the progress printer */
+	err = pthread_create(&print_progress_thread, NULL, print_progress, &q);
+	if (err) {
+		fprintf(stderr, "Error creating thread: %s\n",
+				strerror(err));
 		exit(EXIT_FAILURE);
 	}
 
-	/* the data_ready_mutex should be locked initially as there are
-	   no new pieces read yet */
-	pthread_mutex_lock(&data_ready_mutex);
-	/* let the first piece buffer be in transfer initially */
-	transfer_piece = piece1;
-	/* give the second piece buffer to the file reader thread and
-	   set it to work */
-	pthread_create(&file_reader_thread, NULL, file_reader, piece2);
-	/* we set piece to the third piece for the while loop to begin */
-	piece = piece3;
+	/* read files and feed pieces to the workers */
+	read_files(&q, hash_string);
 
-	/* now set off the progress printer */
-	pthread_create(&print_progress_thread, NULL, print_progress, NULL);
-
-	/* repeat hashing until only the last piece remains */
-	while (pieces_done < pieces - 1) {
-		/* deliver the already hashed piece and get a newly read one */
-		piece = get_piece(piece);
-		/* calculate the SHA1 hash of the piece and write it
-		   the right place in the hash string */
-		SHA1_Init(&c);
-		SHA1_Update(&c, piece, piece_length);
-		SHA1_Final(pos, &c);
-		/* next hash should be written 20 bytes further ahead */
-		pos += SHA_DIGEST_LENGTH;
-		/* yeih! one piece done */
-		pieces_done++;
+	/* we're done so stop printing our progress. */
+	err = pthread_cancel(print_progress_thread);
+	if (err) {
+		fprintf(stderr, "Error cancelling thread: %s\n",
+				strerror(err));
+		exit(EXIT_FAILURE);
 	}
 
-	/* get the last piece */
-	piece = get_piece(piece);
-	/* calculate the size of the last piece */
-	last_piece_length = size % piece_length;
-	if (last_piece_length == 0)
-		last_piece_length = piece_length;
+	/* inform workers we're done */
+	set_done(&q);
 
-	/* now write its hash to the hash string */
-	SHA1_Init(&c);
-	SHA1_Update(&c, piece, last_piece_length);
-	SHA1_Final(pos, &c);
-	/* yeih! we're done */
-	pieces_done++;
-	/* ..so stop printing our progress. */
-	pthread_cancel(print_progress_thread);
+	/* wait for workers to finish */
+	for (i = 0; i < threads; i++) {
+		err = pthread_join(workers[i], NULL);
+		if (err) {
+			fprintf(stderr, "Error joining thread: %s\n",
+					strerror(err));
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	/* the progress printer should be done by now too */
+	err = pthread_join(print_progress_thread, NULL);
+	if (err) {
+		fprintf(stderr, "Error joining thread: %s\n",
+				strerror(err));
+		exit(EXIT_FAILURE);
+	}
+
+	/* destroy mutexes and condition variables */
+	pthread_mutex_destroy(&q.mutex_full);
+	pthread_mutex_destroy(&q.mutex_free);
+	pthread_cond_destroy(&q.cond_empty);
+	pthread_cond_destroy(&q.cond_full);
+
+	/* free buffers */
+	free_buffers(&q);
+
 	/* ok, let the user know we're done too */
-	printf("\rHashed %u/%u pieces.\n", pieces_done, pieces);
+	printf("\rHashed %u of %u pieces.\n", q.pieces_hashed, q.pieces);
 
-	/* the file reader thread stops itself when it's done. */
-
-	/* free the piece buffers before we return */
-	free(piece1);
-	free(piece2);
-	free(piece3);
-
-	/* return our shiny new hash string */
 	return hash_string;
 }

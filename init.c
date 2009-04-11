@@ -312,6 +312,10 @@ static void print_help()
 	  "-o, --output=<filename>       : set the path and filename of the created file\n"
 	  "                                default is <name>.torrent\n"
 	  "-p, --private                 : set the private flag\n"
+#ifndef NO_THREADS
+	  "-t, --threads=<n>             : use <n> threads for calculating hashes\n"
+	  "                                default is 2\n"
+#endif
 	  "-v, --verbose                 : be verbose\n"
 	  "-w, --web-seed=<url>          : add web seed\n"
 	  "\nPlease send bug reports, patches, feature requests, praise and\n"
@@ -333,6 +337,10 @@ static void print_help()
 	  "-o <filename>    : set the path and filename of the created file\n"
 	  "                   default is <name>.torrent\n"
 	  "-p               : set the private flag\n"
+#ifndef NO_THREADS
+	  "-t <n>           : use <n> threads for calculating hashes\n"
+	  "                   default is 2\n"
+#endif
 	  "-v               : be verbose\n"
 	  "-w <url>         : add web seed\n"
 	  "\nPlease send bug reports, patches, feature requests, praise and\n"
@@ -411,6 +419,9 @@ EXPORT void init(int argc, char *argv[])
 		{"name", 1, NULL, 'n'},
 		{"output", 1, NULL, 'o'},
 		{"private", 0, NULL, 'p'},
+#ifndef NO_THREADS
+		{"threads", 1, NULL, 't'},
+#endif
 		{"verbose", 0, NULL, 'v'},
 		{"web-seed", 1, NULL, 'w'},
 		{NULL, 0, NULL, 0}
@@ -419,10 +430,19 @@ EXPORT void init(int argc, char *argv[])
 
 	/* now parse the command line options given */
 #ifndef NO_LONG_OPTIONS
+#ifdef NO_THREADS
 	while ((c = getopt_long(argc, argv, "a:c:dhl:n:o:pvw:",
 				long_options, NULL)) != -1) {
 #else
+	while ((c = getopt_long(argc, argv, "a:c:dhl:n:o:pt:vw:",
+				long_options, NULL)) != -1) {
+#endif
+#else
+#ifdef NO_THREADS
 	while ((c = getopt(argc, argv, "a:c:dhl:n:o:pvw:")) != -1) {
+#else
+	while ((c = getopt(argc, argv, "a:c:dhl:n:o:pt:vw:")) != -1) {
+#endif
 #endif
 		switch (c) {
 		case 'a':
@@ -462,6 +482,11 @@ EXPORT void init(int argc, char *argv[])
 		case 'p':
 			private = 1;
 			break;
+#ifndef NO_THREADS
+		case 't':
+			threads = atoi(optarg);
+			break;
+#endif
 		case 'v':
 			verbose = 1;
 			break;
@@ -499,6 +524,15 @@ EXPORT void init(int argc, char *argv[])
 			"use -h for help\n");
 		exit(EXIT_FAILURE);
 	}
+
+#ifndef NO_THREADS
+	/* check the number of threads */
+	if (threads < 1 || threads > 20) {
+		fprintf(stderr, "The number of threads must be a number"
+				"between 1 and 20\n");
+		exit(EXIT_FAILURE);
+	}
+#endif
 
 	/* strip ending DIRSEP's from target */
 	strip_ending_dirseps(argv[optind]);

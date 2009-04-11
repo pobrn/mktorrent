@@ -69,6 +69,9 @@ EXPORT unsigned long long size = 0;	/* the combined size of all files
 EXPORT fl_node file_list = NULL;	/* linked list of files and
 					   their individual sizes */
 EXPORT unsigned int pieces;		/* number of pieces */
+#ifndef NO_THREADS
+EXPORT unsigned int threads = 2;	/* number of threads used for hashing */
+#endif
 
 #ifdef ALLINONE
 #include "ftw.c"
