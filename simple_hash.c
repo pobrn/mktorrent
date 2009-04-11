@@ -45,7 +45,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 EXPORT unsigned char *make_hash()
 {
-	fl_node p;		/* pointer to a place in the file list */
+	fl_node f;		/* pointer to a place in the file list */
 	unsigned char *hash_string;	/* the hash string */
 	unsigned char *pos;	/* position in the hash string */
 	unsigned char *read_buf;	/* read buffer */
@@ -75,23 +75,35 @@ EXPORT unsigned char *make_hash()
 	/* and initiate r to 0 since we haven't read anything yet */
 	r = 0;
 	/* go through all the files in the file list */
-	for (p = file_list; p; p = p->next) {
+	for (f = file_list; f; f = f->next) {
 
 		/* open the current file for reading */
-		if ((fd = open(p->path, O_RDONLY)) == -1) {
+		if ((fd = open(f->path, O_RDONLY)) == -1) {
 			fprintf(stderr, "Error opening '%s' for reading: %s\n",
-					p->path, strerror(errno));
+					f->path, strerror(errno));
 			exit(EXIT_FAILURE);
 		}
-		printf("Hashing %s.\n", p->path);
+		printf("Hashing %s.\n", f->path);
 		fflush(stdout);
 
 		/* fill the read buffer with the contents of the file and append
 		   the SHA1 hash of it to the hash string when the buffer is full.
 		   repeat until we can't fill the read buffer and we've thus come
 		   to the end of the file */
-		while ((r += read(fd, read_buf + r, piece_length - r))
-		       == piece_length) {
+		while (1) {
+			ssize_t d = read(fd, read_buf + r, piece_length - r);
+
+			if (d < 0) {
+				fprintf(stderr, "Error reading from '%s': %s\n",
+						f->path, strerror(errno));
+				exit(EXIT_FAILURE);
+			}
+
+			r += d;
+
+			if (r < piece_length)
+				break;
+
 			SHA1_Init(&c);
 			SHA1_Update(&c, read_buf, piece_length);
 			SHA1_Final(pos, &c);
@@ -105,7 +117,7 @@ EXPORT unsigned char *make_hash()
 		/* now close the file */
 		if (close(fd)) {
 			fprintf(stderr, "Error closing '%s': %s\n",
-					p->path, strerror(errno));
+					f->path, strerror(errno));
 			exit(EXIT_FAILURE);
 		}
 	}
