@@ -53,7 +53,7 @@ extern int verbose;		/* be verbose */
 extern unsigned long long size;	/* combined size of all files in the torrent */
 extern fl_node file_list;	/* list of files and their individual sizes */
 extern unsigned int pieces;	/* number of pieces */
-#ifndef NO_THREADS
+#ifdef USE_PTHREADS
 extern unsigned int threads;	/* number of threads used for hashing */
 #endif
 

@@ -198,7 +198,7 @@ EXPORT void SHA1_Final(uint8_t *digest, SHA_CTX *context)
 	memset(finalcount, 0, 8);
 #endif
 
-#ifdef SHA1_HANDSOFF  /* make SHA1Transform overwrite its own static vars */
+#ifdef SHA1_HANDSOFF /* make SHA1Transform overwrite its own static vars */
 	SHA1_Transform(context->state, context->buffer);
 #endif
 }

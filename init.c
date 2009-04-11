@@ -312,7 +312,7 @@ static void print_help()
 	  "-o, --output=<filename>       : set the path and filename of the created file\n"
 	  "                                default is <name>.torrent\n"
 	  "-p, --private                 : set the private flag\n"
-#ifndef NO_THREADS
+#ifdef USE_PTHREADS
 	  "-t, --threads=<n>             : use <n> threads for calculating hashes\n"
 	  "                                default is 2\n"
 #endif
@@ -337,7 +337,7 @@ static void print_help()
 	  "-o <filename>    : set the path and filename of the created file\n"
 	  "                   default is <name>.torrent\n"
 	  "-p               : set the private flag\n"
-#ifndef NO_THREADS
+#ifdef USE_PTHREADS
 	  "-t <n>           : use <n> threads for calculating hashes\n"
 	  "                   default is 2\n"
 #endif
@@ -407,7 +407,6 @@ EXPORT void init(int argc, char *argv[])
 {
 	int c;			/* return value of getopt() */
 	al_node announce_last = NULL;
-
 #ifndef NO_LONG_OPTIONS
 	/* the option structure to pass to getopt_long() */
 	static struct option long_options[] = {
@@ -419,7 +418,7 @@ EXPORT void init(int argc, char *argv[])
 		{"name", 1, NULL, 'n'},
 		{"output", 1, NULL, 'o'},
 		{"private", 0, NULL, 'p'},
-#ifndef NO_THREADS
+#ifdef USE_PTHREADS
 		{"threads", 1, NULL, 't'},
 #endif
 		{"verbose", 0, NULL, 'v'},
@@ -428,22 +427,20 @@ EXPORT void init(int argc, char *argv[])
 	};
 #endif
 
+#ifdef USE_PTHREADS
+#define OPT_STRING "a:c:dhl:n:o:pt:vw:"
+#else
+#define OPT_STRING "a:c:dhl:n:o:pvw:"
+#endif
+
+#ifdef NO_LONG_OPTIONS
 	/* now parse the command line options given */
-#ifndef NO_LONG_OPTIONS
-#ifdef NO_THREADS
-	while ((c = getopt_long(argc, argv, "a:c:dhl:n:o:pvw:",
-				long_options, NULL)) != -1) {
+	while ((c = getopt(argc, argv, OPT_STRING)) != -1) {
 #else
-	while ((c = getopt_long(argc, argv, "a:c:dhl:n:o:pt:vw:",
+	while ((c = getopt_long(argc, argv, OPT_STRING,
 				long_options, NULL)) != -1) {
 #endif
-#else
-#ifdef NO_THREADS
-	while ((c = getopt(argc, argv, "a:c:dhl:n:o:pvw:")) != -1) {
-#else
-	while ((c = getopt(argc, argv, "a:c:dhl:n:o:pt:vw:")) != -1) {
-#endif
-#endif
+#undef OPT_STRING
 		switch (c) {
 		case 'a':
 			if (announce_last == NULL) {
@@ -482,7 +479,7 @@ EXPORT void init(int argc, char *argv[])
 		case 'p':
 			private = 1;
 			break;
-#ifndef NO_THREADS
+#ifdef USE_PTHREADS
 		case 't':
 			threads = atoi(optarg);
 			break;
@@ -525,7 +522,7 @@ EXPORT void init(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-#ifndef NO_THREADS
+#ifdef USE_PTHREADS
 	/* check the number of threads */
 	if (threads < 1 || threads > 20) {
 		fprintf(stderr, "The number of threads must be a number"

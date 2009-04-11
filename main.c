@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <unistd.h>		/* access(), read(), close(), getcwd() */
 #ifndef NO_LONG_OPTIONS
 #include <getopt.h>		/* getopt_long() */
-#endif /* NO_LONG_OPTIONS */
+#endif
 #include <time.h>		/* time() */
 #include <dirent.h>		/* opendir(), closedir(), readdir() etc. */
 #ifdef USE_OPENSSL
@@ -38,12 +38,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #else
 #include <stdint.h>
 #endif
-#ifndef NO_THREADS
+#ifdef USE_PTHREADS
 #include <pthread.h>		/* pthread functions and data structures */
-#endif /* NO_THREADS */
+#endif
 
 #define EXPORT static
 #else
+
 #define EXPORT
 #endif /* ALLINONE */
 
@@ -69,7 +70,7 @@ EXPORT unsigned long long size = 0;	/* the combined size of all files
 EXPORT fl_node file_list = NULL;	/* linked list of files and
 					   their individual sizes */
 EXPORT unsigned int pieces;		/* number of pieces */
-#ifndef NO_THREADS
+#ifdef USE_PTHREADS
 EXPORT unsigned int threads = 2;	/* number of threads used for hashing */
 #endif
 
@@ -81,11 +82,11 @@ EXPORT unsigned int threads = 2;	/* number of threads used for hashing */
 #include "sha1.c"
 #endif
 
-#ifdef NO_THREADS
-#include "simple_hash.c"
+#ifdef USE_PTHREADS
+#include "hash_pthreads.c"
 #else
 #include "hash.c"
-#endif /* NO_THREADS */
+#endif
 
 #include "output.c"
 #else
