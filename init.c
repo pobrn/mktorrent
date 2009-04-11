@@ -39,6 +39,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #define MAX_OPENFD 100		/* Maximum no. of file descriptors ftw will open */
 #endif
 
+static void strip_ending_dirseps(char *s)
+{
+	char *end = s;
+
+	while (*end)
+		end++;
+
+	while (end > s && *(--end) == DIRSEP_CHAR)
+		*end = '\0';
+}
+
 static const char *basename(const char *s)
 {
 	const char *r = s;
@@ -488,6 +499,9 @@ EXPORT void init(int argc, char *argv[])
 			"use -h for help\n");
 		exit(EXIT_FAILURE);
 	}
+
+	/* strip ending DIRSEP's from target */
+	strip_ending_dirseps(argv[optind]);
 
 	/* if the torrent name isn't set use the basename of the target */
 	if (torrent_name == NULL)
