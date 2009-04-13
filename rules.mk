@@ -38,7 +38,8 @@ clean:
 	rm -f $(program) *.o *.c~ *.h~
 
 install: $(program)
-	$(INSTALL) -m755 -D $(program) $(DESTDIR)$(PREFIX)/bin/$(program)
+	$(INSTALL) -d $(DESTDIR)$(PREFIX)/bin
+	$(INSTALL) -m755 $(program) $(DESTDIR)$(PREFIX)/bin/$(program)
 
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/$(program)
