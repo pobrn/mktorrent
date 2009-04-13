@@ -43,7 +43,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  * concatenation of the (20 byte) SHA1 hash of every piece
  * last piece may be shorter
  */
-EXPORT unsigned char *make_hash()
+EXPORT unsigned char *make_hash(metafile_t *m)
 {
 	fl_node f;		/* pointer to a place in the file list */
 	unsigned char *hash_string;	/* the hash string */
@@ -60,9 +60,9 @@ EXPORT unsigned char *make_hash()
 
 	/* allocate memory for the hash string
 	   every SHA1 hash is SHA_DIGEST_LENGTH (20) bytes long */
-	hash_string = malloc(pieces * SHA_DIGEST_LENGTH);
+	hash_string = malloc(m->pieces * SHA_DIGEST_LENGTH);
 	/* allocate memory for the read buffer to store 1 piece */
-	read_buf = malloc(piece_length);
+	read_buf = malloc(m->piece_length);
 
 	/* check if we've run out of memory */
 	if (hash_string == NULL || read_buf == NULL) {
@@ -75,7 +75,7 @@ EXPORT unsigned char *make_hash()
 	/* and initiate r to 0 since we haven't read anything yet */
 	r = 0;
 	/* go through all the files in the file list */
-	for (f = file_list; f; f = f->next) {
+	for (f = m->file_list; f; f = f->next) {
 
 		/* open the current file for reading */
 		if ((fd = open(f->path, O_RDONLY)) == -1) {
@@ -91,7 +91,7 @@ EXPORT unsigned char *make_hash()
 		   repeat until we can't fill the read buffer and we've thus come
 		   to the end of the file */
 		while (1) {
-			ssize_t d = read(fd, read_buf + r, piece_length - r);
+			ssize_t d = read(fd, read_buf + r, m->piece_length - r);
 
 			if (d < 0) {
 				fprintf(stderr, "Error reading from '%s': %s\n",
@@ -101,11 +101,11 @@ EXPORT unsigned char *make_hash()
 
 			r += d;
 
-			if (r < piece_length)
+			if (r < m->piece_length)
 				break;
 
 			SHA1_Init(&c);
-			SHA1_Update(&c, read_buf, piece_length);
+			SHA1_Update(&c, read_buf, m->piece_length);
 			SHA1_Final(pos, &c);
 			pos += SHA_DIGEST_LENGTH;
 #ifndef NO_HASH_CHECK
@@ -129,9 +129,9 @@ EXPORT unsigned char *make_hash()
 
 #ifndef NO_HASH_CHECK
 	counter += r;
-	if (counter != size) {
+	if (counter != m->size) {
 		fprintf(stderr, "Counted %llu bytes, but hashed %llu bytes. "
-				"Something is wrong...\n", size, counter);
+				"Something is wrong...\n", m->size, counter);
 		exit(EXIT_FAILURE);
 	}
 #endif

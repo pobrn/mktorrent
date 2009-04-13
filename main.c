@@ -51,28 +51,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include "mktorrent.h"
 
 /* global variables */
-/* options */
-EXPORT size_t piece_length = 18;        /* 2^18 = 256kb by default */
-EXPORT al_node announce_list = NULL;    /* announce URLs */
-EXPORT const char *torrent_name = NULL; /* name of the torrent (name of directory) */
-EXPORT char *metainfo_file_path;        /* absolute path to the metainfo file */
-EXPORT char *web_seed_url = NULL;       /* web seed URL */
-EXPORT char *comment = NULL;            /* optional comment to add to the metainfo */
-EXPORT int target_is_directory = 0;     /* target is a directory
-                                           not just a single file */
-EXPORT int no_creation_date = 0;        /* don't write the creation date */
-EXPORT int private = 0;                 /* set the private flag */
-EXPORT int verbose = 0;                 /* be verbose */
-
-/* information calculated by read_dir() */
-EXPORT unsigned long long size = 0;	/* the combined size of all files
-					   in the torrent */
-EXPORT fl_node file_list = NULL;	/* linked list of files and
-					   their individual sizes */
-EXPORT unsigned int pieces;		/* number of pieces */
-#ifdef USE_PTHREADS
-EXPORT unsigned int threads = 2;	/* number of threads used for hashing */
-#endif
 
 #ifdef ALLINONE
 #include "ftw.c"
@@ -91,28 +69,28 @@ EXPORT unsigned int threads = 2;	/* number of threads used for hashing */
 #include "output.c"
 #else
 /* init.c */
-extern void init(int argc, char *argv[]);
+extern void init(metafile_t *m, int argc, char *argv[]);
 /* hash.c */
-extern unsigned char *make_hash();
+extern unsigned char *make_hash(metafile_t *m);
 /* output.c */
-extern void write_metainfo(FILE * file, unsigned char *hash_string);
+extern void write_metainfo(metafile_t *m, FILE * file, unsigned char *hash_string);
 #endif /* ALLINONE */
 
 /*
  * create and open the metainfo file for writing and create a stream for it
  * we don't want to overwrite anything, so abort if the file is already there
  */
-static FILE *open_file()
+static FILE *open_file(const char *path)
 {
 	int fd;			/* file descriptor */
 	FILE *f;		/* file stream */
 
 	/* open and create the file if it doesn't exist already */
-	fd = open(metainfo_file_path, O_WRONLY | O_CREAT | O_EXCL,
+	fd = open(path, O_WRONLY | O_CREAT | O_EXCL,
 		       S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (fd < 0) {
 		fprintf(stderr, "Error creating '%s': %s\n",
-				metainfo_file_path, strerror(errno));
+				path, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
@@ -120,7 +98,7 @@ static FILE *open_file()
 	f = fdopen(fd, "w");
 	if (f == NULL) {
 		fprintf(stderr,	"Error creating stream for '%s': %s\n",
-				metainfo_file_path, strerror(errno));
+				path, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
@@ -145,20 +123,41 @@ static void close_file(FILE *f)
  */
 int main(int argc, char *argv[])
 {
-	static FILE *file;	/* stream for writing to the metainfo file */
+	FILE *file;	/* stream for writing to the metainfo file */
+	metafile_t m = {
+		/* options */
+		18,   /* piece_length, 2^18 = 256kb by default */
+		NULL, /* announce_list */
+		NULL, /* torrent_name */
+		NULL, /* metainfo_file_path */
+		NULL, /* web_seed_url */
+		NULL, /* comment */
+		0,    /* target_is_directory  */
+		0,    /* no_creation_date */
+		0,    /* private */
+		0,    /* verbose */
+#ifdef USE_PTHREADS
+		2,    /* threads */
+#endif
+
+		/* information calculated by read_dir() */
+		0,    /* size */
+		NULL, /* file_list */
+		0    /* pieces */
+	};
 
 	/* print who we are */
 	printf("mktorrent " VERSION " (c) 2007, 2009 Emil Renner Berthing\n\n");
 
 	/* process options and initiate global variables */
-	init(argc, argv);
+	init(&m, argc, argv);
 
 	/* open the file stream now, so we don't have to abort
 	   _after_ we did all the hashing in case we fail */
-	file = open_file();
+	file = open_file(m.metainfo_file_path);
 
 	/* calculate hash string and write the metainfo to file */
-	write_metainfo(file, make_hash());
+	write_metainfo(&m, file, make_hash(&m));
 
 	/* close the file stream */
 	close_file(file);

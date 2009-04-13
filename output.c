@@ -100,7 +100,7 @@ static void write_file_list(FILE *f, fl_node list)
  * write metainfo to the file stream using all the information
  * we've gathered so far and the hash string calculated
  */
-EXPORT void write_metainfo(FILE *f, unsigned char *hash_string)
+EXPORT void write_metainfo(metafile_t *m, FILE *f, unsigned char *hash_string)
 {
 	/* let the user know we've started writing the metainfo file */
 	printf("Writing metainfo file... ");
@@ -109,18 +109,18 @@ EXPORT void write_metainfo(FILE *f, unsigned char *hash_string)
 	/* every metainfo file is one big dictonary
 	   and the first entry is the announce URL */
 	fprintf(f, "d8:announce%zu:%s",
-		strlen(announce_list->l->s), announce_list->l->s);
+		strlen(m->announce_list->l->s), m->announce_list->l->s);
 	/* write the announce-list entry if we have
 	   more than one announce URL */
-	if (announce_list->next || announce_list->l->next)
-		write_announce_list(f, announce_list);
+	if (m->announce_list->next || m->announce_list->l->next)
+		write_announce_list(f, m->announce_list);
 	/* add the comment if one is specified */
-	if (comment != NULL)
-		fprintf(f, "7:comment%zu:%s", strlen(comment), comment);
+	if (m->comment != NULL)
+		fprintf(f, "7:comment%zu:%s", strlen(m->comment), m->comment);
 	/* I made this! */
 	fprintf(f, "10:created by13:mktorrent " VERSION);
 	/* add the creation date */
-	if (!no_creation_date)
+	if (!m->no_creation_date)
 		fprintf(f, "13:creation datei%ue",
 			(unsigned int) time(NULL));
 
@@ -129,30 +129,30 @@ EXPORT void write_metainfo(FILE *f, unsigned char *hash_string)
 	fprintf(f, "4:infod");
 	/* first entry is either 'length', which specifies the length of a
 	   single file torrent, or a list of files and their respective sizes */
-	if (!target_is_directory)
+	if (!m->target_is_directory)
 		fprintf(f, "6:lengthi%llue",
-			(unsigned long long) file_list->size);
+			(unsigned long long) m->file_list->size);
 	else
-		write_file_list(f, file_list);
+		write_file_list(f, m->file_list);
 
 	/* the info section also contains the name of the torrent,
 	   the piece length and the hash string */
 	fprintf(f, "4:name%zu:%s12:piece lengthi%zue6:pieces%u:",
-		strlen(torrent_name), torrent_name,
-		piece_length, pieces * SHA_DIGEST_LENGTH);
-	fwrite(hash_string, 1, pieces * SHA_DIGEST_LENGTH, f);
+		strlen(m->torrent_name), m->torrent_name,
+		m->piece_length, m->pieces * SHA_DIGEST_LENGTH);
+	fwrite(hash_string, 1, m->pieces * SHA_DIGEST_LENGTH, f);
 
 	/* set the private flag */
-	if (private)
+	if (m->private)
 		fprintf(f, "7:privatei1e");
 
 	/* end the info section */
 	fprintf(f, "e");
 
 	/* add url-list if one is specified */
-	if (web_seed_url != NULL)
+	if (m->web_seed_url != NULL)
 		fprintf(f, "8:url-list%zu:%s",
-				strlen(web_seed_url), web_seed_url);
+				strlen(m->web_seed_url), m->web_seed_url);
 
 	/* end the root dictionary */
 	fprintf(f, "e");

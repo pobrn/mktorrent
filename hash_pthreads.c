@@ -197,7 +197,7 @@ static void *worker(void *data)
 	return NULL;
 }
 
-static void read_files(queue_t *q, unsigned char *pos)
+static void read_files(metafile_t *m, queue_t *q, unsigned char *pos)
 {
 	int fd;					/* file descriptor */
 	fl_node f;				/* pointer to a place in the file
@@ -208,10 +208,10 @@ static void read_files(queue_t *q, unsigned char *pos)
 	unsigned long long counter = 0;		/* number of bytes hashed
 						   should match size when done */
 #endif
-	piece_t *p = get_free(q, piece_length);
+	piece_t *p = get_free(q, m->piece_length);
 
 	/* go through all the files in the file list */
-	for (f = file_list; f; f = f->next) {
+	for (f = m->file_list; f; f = f->next) {
 
 		/* open the current file for reading */
 		if ((fd = open(f->path, O_RDONLY)) == -1) {
@@ -221,7 +221,7 @@ static void read_files(queue_t *q, unsigned char *pos)
 		}
 
 		while (1) {
-			ssize_t d = read(fd, p->data + r, piece_length - r);
+			ssize_t d = read(fd, p->data + r, m->piece_length - r);
 
 			if (d < 0) {
 				fprintf(stderr, "Error reading from '%s': %s\n",
@@ -231,18 +231,18 @@ static void read_files(queue_t *q, unsigned char *pos)
 
 			r += d;
 
-			if (r < piece_length)
+			if (r < m->piece_length)
 				break;
 
 			p->dest = pos;
-			p->len = piece_length;
+			p->len = m->piece_length;
 			put_full(q, p);
 			pos += SHA_DIGEST_LENGTH;
 #ifndef NO_HASH_CHECK
 			counter += r;
 #endif
 			r = 0;
-			p = get_free(q, piece_length);
+			p = get_free(q, m->piece_length);
 		}
 
 		/* now close the file */
@@ -260,15 +260,15 @@ static void read_files(queue_t *q, unsigned char *pos)
 
 #ifndef NO_HASH_CHECK
 	counter += r;
-	if (counter != size) {
+	if (counter != m->size) {
 		fprintf(stderr, "Counted %llu bytes, but hashed %llu bytes. "
-				"Something is wrong...\n", size, counter);
+				"Something is wrong...\n", m->size, counter);
 		exit(EXIT_FAILURE);
 	}
 #endif
 }
 
-EXPORT unsigned char *make_hash()
+EXPORT unsigned char *make_hash(metafile_t *m)
 {
 	queue_t q = {
 		NULL, NULL, 0, 0,
@@ -284,16 +284,16 @@ EXPORT unsigned char *make_hash()
 	unsigned int i;
 	int err;
 
-	workers = alloca(threads * sizeof(pthread_t));
-	hash_string = malloc(pieces * SHA_DIGEST_LENGTH);
+	workers = alloca(m->threads * sizeof(pthread_t));
+	hash_string = malloc(m->pieces * SHA_DIGEST_LENGTH);
 	if (workers == NULL || hash_string == NULL)
 		return NULL;
 
-	q.pieces = pieces;
-	q.buffers_max = 3*threads;
+	q.pieces = m->pieces;
+	q.buffers_max = 3*m->threads;
 
 	/* create worker threads */
-	for (i = 0; i < threads; i++) {
+	for (i = 0; i < m->threads; i++) {
 		err = pthread_create(&workers[i], NULL, worker, &q);
 		if (err) {
 			fprintf(stderr, "Error creating thread: %s\n",
@@ -311,7 +311,7 @@ EXPORT unsigned char *make_hash()
 	}
 
 	/* read files and feed pieces to the workers */
-	read_files(&q, hash_string);
+	read_files(m, &q, hash_string);
 
 	/* we're done so stop printing our progress. */
 	err = pthread_cancel(print_progress_thread);
@@ -325,7 +325,7 @@ EXPORT unsigned char *make_hash()
 	set_done(&q);
 
 	/* wait for workers to finish */
-	for (i = 0; i < threads; i++) {
+	for (i = 0; i < m->threads; i++) {
 		err = pthread_join(workers[i], NULL);
 		if (err) {
 			fprintf(stderr, "Error joining thread: %s\n",

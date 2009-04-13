@@ -36,7 +36,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #endif /* ALLINONE */
 
 #ifndef MAX_OPENFD
-#define MAX_OPENFD 100		/* Maximum no. of file descriptors ftw will open */
+#define MAX_OPENFD 100	/* Maximum number of file descriptors
+			   file_tree_walk() will open */
 #endif
 
 static void strip_ending_dirseps(char *s)
@@ -64,19 +65,15 @@ static const char *basename(const char *s)
 	return r;
 }
 
-/*
- * returns the absolute path to the metainfo file
- * if file_path is NULL use <torrent name>.torrent as file name
- */
-static char *get_absolute_file_path(char *file_path, const char *torrent_name)
+static void set_absolute_file_path(metafile_t *m)
 {
 	char *string;		/* string to return */
 	size_t length = 32;	/* length of the string */
 
 	/* if the file_path is already an absolute path just
 	   return that */
-	if (file_path && *file_path == DIRSEP_CHAR)
-		return file_path;
+	if (m->metainfo_file_path && *m->metainfo_file_path == DIRSEP_CHAR)
+		return;
 
 	/* first get the current working directory
 	   using getcwd is a bit of a PITA */
@@ -103,29 +100,28 @@ static char *get_absolute_file_path(char *file_path, const char *torrent_name)
 	/* now set length to the proper length of the working dir */
 	length = strlen(string);
 	/* if the metainfo file path isn't set */
-	if (metainfo_file_path == NULL) {
+	if (m->metainfo_file_path == NULL) {
 		/* append <torrent name>.torrent to the working dir */
 		string =
-		    realloc(string, length + strlen(torrent_name) + 10);
+		    realloc(string, length + strlen(m->torrent_name) + 10);
 		if (string == NULL) {
 			fprintf(stderr, "Out of memory.\n");
 			exit(EXIT_FAILURE);
 		}
-		sprintf(string + length, DIRSEP "%s.torrent", torrent_name);
+		sprintf(string + length, DIRSEP "%s.torrent", m->torrent_name);
 	} else {
 		/* otherwise append the torrent path to the working dir */
 		string =
 		    realloc(string,
-			    length + strlen(metainfo_file_path) + 2);
+			    length + strlen(m->metainfo_file_path) + 2);
 		if (string == NULL) {
 			fprintf(stderr, "Out of memory.\n");
 			exit(EXIT_FAILURE);
 		}
-		sprintf(string + length, DIRSEP "%s", metainfo_file_path);
+		sprintf(string + length, DIRSEP "%s", m->metainfo_file_path);
 	}
 
-	/* return the string */
-	return string;
+	m->metainfo_file_path = string;
 }
 
 /*
@@ -175,7 +171,7 @@ static sl_node get_announces(char *s)
  * checks if target is a directory
  * sets the file_list and size if it isn't
  */
-static int is_dir(char *target)
+static int is_dir(metafile_t *m, char *target)
 {
 	struct stat s;		/* stat structure for stat() to fill */
 
@@ -200,23 +196,23 @@ static int is_dir(char *target)
 
 	/* since we know the torrent is just a single file and we've
 	   already stat'ed it, we might as well set the file list */
-	file_list = malloc(sizeof(struct fl_node_s));
-	if (file_list == NULL) {
+	m->file_list = malloc(sizeof(struct fl_node_s));
+	if (m->file_list == NULL) {
 		fprintf(stderr, "Out of memory.\n");
 		exit(EXIT_FAILURE);
 	}
-	file_list->path = target;
-	file_list->size = s.st_size;
-	file_list->next = NULL;
+	m->file_list->path = target;
+	m->file_list->size = s.st_size;
+	m->file_list->next = NULL;
 	/* ..and size global variables */
-	size = s.st_size;
+	m->size = s.st_size;
 
 	/* now return 0 since it isn't a directory */
 	return 0;
 }
 
 /*
- * called by ftw() on every file and directory in the subtree
+ * called by file_tree_walk() on every file and directory in the subtree
  * counts the number of (readable) files, their commulative size and adds
  * their names and individual sizes to the file list
  */
@@ -224,6 +220,7 @@ static int process_node(const char *path, const struct stat *sb, void *data)
 {
 	fl_node *p;		/* pointer to a node in the file list */
 	fl_node new_node;	/* place to store a newly created node */
+	metafile_t *m = data;
 
 	/* skip non-regular files */
 	if (!S_ISREG(sb->st_mode))
@@ -239,15 +236,15 @@ static int process_node(const char *path, const struct stat *sb, void *data)
 		return 0;
 	}
 
-	if (verbose)
+	if (m->verbose)
 		printf("Adding %s\n", path);
 
 	/* count the total size of the files */
-	size += sb->st_size;
+	m->size += sb->st_size;
 
 	/* find where to insert the new node so that the file list
 	   remains ordered by the path */
-	p = &file_list;
+	p = &m->file_list;
 	while (*p && strcmp(path, (*p)->path) > 0)
 		p = &((*p)->next);
 
@@ -268,26 +265,6 @@ static int process_node(const char *path, const struct stat *sb, void *data)
 	   but usually a torrent doesn't contain too many files,
 	   so we'll probably be alright ;) */
 	return 0;
-}
-
-/*
- * read the specified directory to create the file_list, count the size
- * of all the files and calculate the number of pieces
- */
-static void read_dir(const char *dir)
-{
-	/* change to the specified directory */
-	if (chdir(dir)) {
-		fprintf(stderr, "Error changing directory to '%s': %s\n",
-				dir, strerror(errno));
-		exit(EXIT_FAILURE);
-	}
-
-	/* now process all the files in it
-	   process_node() will take care of creating the file list
-	   and counting the size of all the files */
-	if (file_tree_walk("." DIRSEP, MAX_OPENFD, process_node, NULL))
-		exit(EXIT_FAILURE);
 }
 
 /*
@@ -367,43 +344,43 @@ static void print_announce_list(al_node list)
 /*
  * print out all the options
  */
-static void dump_options()
+static void dump_options(metafile_t *m)
 {
 	printf("Options:\n"
 	       "  Announce URLs:\n");
 
-	print_announce_list(announce_list);
+	print_announce_list(m->announce_list);
 
 	printf("  Torrent name: %s\n"
 	       "  Metafile:     %s\n"
 	       "  Piece length: %zu\n"
 	       "  Be verbose:   yes\n",
-	       torrent_name, metainfo_file_path, piece_length);
+	       m->torrent_name, m->metainfo_file_path, m->piece_length);
 
 	printf("  Write date:   ");
-	if (no_creation_date)
+	if (m->no_creation_date)
 		printf("no\n");
 	else
 		printf("yes\n");
 
 	printf("  Web Seed URL: ");
-	if (web_seed_url == NULL)
+	if (m->web_seed_url == NULL)
 		printf("none\n");
 	else
-		printf("%s\n", web_seed_url);
+		printf("%s\n", m->web_seed_url);
 
 	printf("  Comment:      ");
-	if (comment == NULL)
+	if (m->comment == NULL)
 		printf("none\n\n");
 	else
-		printf("\"%s\"\n\n", comment);
+		printf("\"%s\"\n\n", m->comment);
 }
 
 /*
  * parse and check the command line options given
  * and initiate all the global variables
  */
-EXPORT void init(int argc, char *argv[])
+EXPORT void init(metafile_t *m, int argc, char *argv[])
 {
 	int c;			/* return value of getopt() */
 	al_node announce_last = NULL;
@@ -443,7 +420,7 @@ EXPORT void init(int argc, char *argv[])
 		switch (c) {
 		case 'a':
 			if (announce_last == NULL) {
-				announce_list = announce_last =
+				m->announce_list = announce_last =
 					malloc(sizeof(struct al_node_s));
 			} else {
 				announce_last->next =
@@ -458,36 +435,36 @@ EXPORT void init(int argc, char *argv[])
 			announce_last->l = get_announces(optarg);
 			break;
 		case 'c':
-			comment = optarg;
+			m->comment = optarg;
 			break;
 		case 'd':
-			no_creation_date = 1;
+			m->no_creation_date = 1;
 			break;
 		case 'h':
 			print_help();
 			exit(EXIT_SUCCESS);
 		case 'l':
-			piece_length = atoi(optarg);
+			m->piece_length = atoi(optarg);
 			break;
 		case 'n':
-			torrent_name = optarg;
+			m->torrent_name = optarg;
 			break;
 		case 'o':
-			metainfo_file_path = optarg;
+			m->metainfo_file_path = optarg;
 			break;
 		case 'p':
-			private = 1;
+			m->private = 1;
 			break;
 #ifdef USE_PTHREADS
 		case 't':
-			threads = atoi(optarg);
+			m->threads = atoi(optarg);
 			break;
 #endif
 		case 'v':
-			verbose = 1;
+			m->verbose = 1;
 			break;
 		case 'w':
-			web_seed_url = optarg;
+			m->web_seed_url = optarg;
 			break;
 		case '?':
 			fprintf(stderr, "Use -h for help.\n");
@@ -497,17 +474,17 @@ EXPORT void init(int argc, char *argv[])
 
 	/* set the correct piece length.
 	   default is 2^18 = 256kb. */
-	if (piece_length < 15 || piece_length > 25) {
+	if (m->piece_length < 15 || m->piece_length > 25) {
 		fprintf(stderr,
 			"The piece length must be a number between "
 			"15 and 25.\n");
 		exit(EXIT_FAILURE);
 	}
-	piece_length = 1 << piece_length;
+	m->piece_length = 1 << m->piece_length;
 
 	/* user must specify at least one announce URL as it wouldn't make
 	 * any sense to have a default for this */
-	if (announce_list == NULL) {
+	if (m->announce_list == NULL) {
 		fprintf(stderr, "Must specify an announce URL. "
 			"Use -h for help.\n");
 		exit(EXIT_FAILURE);
@@ -523,7 +500,7 @@ EXPORT void init(int argc, char *argv[])
 
 #ifdef USE_PTHREADS
 	/* check the number of threads */
-	if (threads < 1 || threads > 20) {
+	if (m->threads < 1 || m->threads > 20) {
 		fprintf(stderr, "The number of threads must be a number"
 				"between 1 and 20\n");
 		exit(EXIT_FAILURE);
@@ -534,32 +511,38 @@ EXPORT void init(int argc, char *argv[])
 	strip_ending_dirseps(argv[optind]);
 
 	/* if the torrent name isn't set use the basename of the target */
-	if (torrent_name == NULL)
-		torrent_name = basename(argv[optind]);
+	if (m->torrent_name == NULL)
+		m->torrent_name = basename(argv[optind]);
 
-	/* make sure metainfo_file_path is the absolute path to the file
-	   if metainfo_file_path is not set use <torrent name>.torrent as
-	   file name */
-	metainfo_file_path =
-		get_absolute_file_path(metainfo_file_path, torrent_name);
+	/* make sure m->metainfo_file_path is the absolute path to the file */
+	set_absolute_file_path(m);
 
 	/* if we should be verbose print out all the options
 	   as we have set them */
-	if (verbose)
-		dump_options();
+	if (m->verbose)
+		dump_options(m);
 
 	/* check if target is a directory or just a single file */
-	target_is_directory = is_dir(argv[optind]);
-	if (target_is_directory)
-		read_dir(argv[optind]);
+	m->target_is_directory = is_dir(m, argv[optind]);
+	if (m->target_is_directory) {
+		/* change to the specified directory */
+		if (chdir(argv[optind])) {
+			fprintf(stderr, "Error changing directory to '%s': %s\n",
+					argv[optind], strerror(errno));
+			exit(EXIT_FAILURE);
+		}
+
+		if (file_tree_walk("." DIRSEP, MAX_OPENFD, process_node, m))
+			exit(EXIT_FAILURE);
+	}
 
 	/* calculate the number of pieces
 	   pieces = ceil( size / piece_length ) */
-	pieces = (size + piece_length - 1) / piece_length;
+	m->pieces = (m->size + m->piece_length - 1) / m->piece_length;
 
 	/* now print the size and piece count if we should be verbose */
-	if (verbose)
+	if (m->verbose)
 		printf("\n%llu bytes in all.\n"
 		       "That's %u pieces of %zu bytes each.\n\n",
-		       size, pieces, piece_length);
+		       m->size, m->pieces, m->piece_length);
 }

@@ -34,29 +34,26 @@ struct fl_node_s {
 	fl_node next;
 };
 
-#ifndef ALLINONE
-
-/* global variables */
-/* options */
-extern size_t piece_length;	/* piece length */
-extern al_node announce_list;	/* announce URLs */
-extern char *comment;		/* optional comment to add to the metainfo */
-extern const char *torrent_name;	/* name of the torrent (name of directory) */
-extern char *metainfo_file_path;	/* absolute path to the metainfo file */
-extern char *web_seed_url;	/* web seed URL */
-extern int target_is_directory;	/* target is a directory not just a single file */
-extern int no_creation_date;	/* don't write the creation date */
-extern int private;		/* set the private flag */
-extern int verbose;		/* be verbose */
-
-/* information calculated by read_dir() */
-extern unsigned long long size;	/* combined size of all files in the torrent */
-extern fl_node file_list;	/* list of files and their individual sizes */
-extern unsigned int pieces;	/* number of pieces */
+typedef struct {
+	/* options */
+	size_t piece_length;		/* piece length */
+	al_node announce_list;		/* announce URLs */
+	char *comment;			/* optional comment */
+	const char *torrent_name;	/* name of torrent (name of directory) */
+	char *metainfo_file_path;	/* absolute path to the metainfo file */
+	char *web_seed_url;		/* web seed URL */
+	int target_is_directory;	/* target is a directory */
+	int no_creation_date;		/* don't write the creation date */
+	int private;			/* set the private flag */
+	int verbose;			/* be verbose */
 #ifdef USE_PTHREADS
-extern unsigned int threads;	/* number of threads used for hashing */
+	unsigned int threads;		/* number of threads used for hashing */
 #endif
 
-#endif /* ALLINONE */
+	/* information calculated by read_dir() */
+	unsigned long long size;	/* combined size of all files */
+	fl_node file_list;		/* list of files and their sizes */
+	unsigned int pieces;		/* number of pieces */
+} metafile_t;
 
 #endif /* _MKTORRENT_H */
