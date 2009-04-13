@@ -1,5 +1,5 @@
 # This file is part of mktorrent
-# Copyright (C) 2007  Emil Renner Berthing
+# Copyright (C) 2007, 2009 Emil Renner Berthing
 #
 # mktorrent is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,10 +17,11 @@
 
 #-------------Interesting variables for you to override :)--------------------
 
-CC	?= cc
-CFLAGS  ?= -O2 -Wall
-INSTALL ?= install
-PREFIX  ?= /usr/local
+# Default settings shown
+#CC      = cc
+#CFLAGS  = -O2 -Wall
+#INSTALL = install
+#PREFIX  = /usr/local
 
 # Use multiple POSIX threads for calculating hashes. This should be slightly
 # faster. Much faster on systems with multiple CPUs and fast harddrives.
@@ -54,74 +55,10 @@ PREFIX  ?= /usr/local
 # information.
 #DEBUG = 1
 
-
 #-------------Nothing interesting below this line-----------------------------
 
-program := mktorrent
-version := 0.5
+program = mktorrent
+version = 0.6
 
 HEADERS  = mktorrent.h
-SRCS    := ftw.c init.c sha1.c hash.c output.c main.c
-OBJS     = $(SRCS:.c=.o)
-LIBS    :=
-
-ifdef USE_PTHREADS
-DEFINES += -DUSE_PTHREADS
-SRCS := $(SRCS:hash.c=hash_pthreads.c)
-LIBS += -lpthread
-endif
-
-ifdef USE_OPENSSL
-DEFINES += -DUSE_OPENSSL
-SRCS := $(SRCS:sha1.c=)
-LIBS += -lssl
-endif
-
-
-ifdef NO_LONG_OPTIONS
-DEFINES += -DNO_LONG_OPTIONS
-endif
-
-ifdef NO_HASH_CHECK
-DEFINES += -DNO_HASH_CHECK
-endif
-
-ifdef MAX_OPENFD
-DEFINES += -DMAX_OPENFD="$(MAX_OPENFD)"
-endif
-
-ifdef DEBUG
-DEFINES += -DDEBUG
-endif
-
-override DEFINES += -DVERSION="\"$(version)\""
-override CFLAGS  += $(DEFINES)
-override LDFLAGS += $(LIBS)
-
-.PHONY: all strip indent clean install uninstall
-
-all: $(program)
-
-%.o : %.c $(HEADERS)
-	$(CC) $(CFLAGS) -c $<
-
-$(program): $(OBJS)
-	$(CC) $(CFLAGS) $^ -o $(program) $(LDFLAGS)
-
-allinone: $(SRCS) $(HEADERS)
-	$(CC) $(CFLAGS) -DALLINONE main.c -o $(program) $(LDFLAGS)
-
-strip:
-	strip $(program)
-
-indent:
-	indent -kr -i8 *.c *.h
-
-clean:
-	rm -f $(program) *.o *.c~ *.h~
-
-install: $(program)
-	$(INSTALL) -m755 -D $(program) $(DESTDIR)$(PREFIX)/bin/$(program)
-
-uninstall:
-	rm -f $(DESTDIR)$(PREFIX)/bin/$(program)
+SRCS     = ftw.c init.c sha1.c hash.c output.c main.c
