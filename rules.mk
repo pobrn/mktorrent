@@ -15,12 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-.PHONY: all strip indent clean install uninstall
-
-all: $(program)
-
-%.o : %.c $(HEADERS)
-	$(CC) $(CFLAGS) $(DEFINES) -DVERSION="\"$(version)\"" -c $<
+.PHONY: strip indent clean install uninstall
 
 $(program): $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o $(program) $(LDFLAGS) $(LIBS)

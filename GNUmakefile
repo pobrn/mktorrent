@@ -52,4 +52,9 @@ endif
 
 OBJS = $(SRCS:.c=.o)
 
+all: $(program)
+
+%.o: %.c $(HEADERS)
+	$(CC) $(CFLAGS) $(DEFINES) -DVERSION="\"$(version)\"" -c $<
+
 include rules.mk

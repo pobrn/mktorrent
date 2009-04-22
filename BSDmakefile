@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-.include Makefile
+.include "Makefile"
 
 CC      ?= cc
 CFLAGS  ?= -O2 -Wall
@@ -52,4 +52,12 @@ DEFINES += -DDEBUG
 
 OBJS = $(SRCS:.c=.o)
 
-.include rules.mk
+all: $(program)
+
+.SUFFIXES: .o .c
+.c.o:
+	$(CC) $(CFLAGS) $(DEFINES) -DVERSION="\"$(version)\"" -c $(.IMPSRC)
+
+$(OBJS): $(HEADERS)
+
+.include "rules.mk"
