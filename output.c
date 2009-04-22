@@ -22,7 +22,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <stdio.h>		/* printf() etc. */
 #include <string.h>		/* strlen() etc. */
 #include <time.h>		/* time() */
+#ifdef USE_OPENSSL
 #include <openssl/sha.h>	/* SHA_DIGEST_LENGTH */
+#else
+#include <stdint.h>
+#include "sha1.h"
+#endif
 
 #include "mktorrent.h"
 
