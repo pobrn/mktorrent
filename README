@@ -1,6 +1,8 @@
-To build the program you need OpenSSL installed.
 Type 'make' to build the program.
 Do 'make install' to install the program to /usr/local/bin.
 For more options look in the Makefile.
+
+If you use an old version of BSD's make, you might need
+make -f BSDmakefile
 
 See http://mktorrent.sourceforge.net/ for more info.
