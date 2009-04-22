@@ -145,7 +145,7 @@ static sl_node get_announces(char *s)
 	}
 
 	/* add URLs to the list while there are commas in the string */
-	while ((e = index(s, ','))) {
+	while ((e = strchr(s, ','))) {
 		/* set the commas to \0 so the URLs appear as
 		 * separate strings */
 		*e = '\0';

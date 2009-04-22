@@ -75,7 +75,7 @@ static void write_file_list(FILE *f, fl_node list)
 		   sorry this code is even uglier than the rest */
 		a = list->path;
 		/* while there are subdirectories before the filename.. */
-		while ((b = index(a, DIRSEP_CHAR)) != NULL) {
+		while ((b = strchr(a, DIRSEP_CHAR)) != NULL) {
 			/* set the next DIRSEP_CHAR to '\0' so fprintf
 			   will only write the first subdirectory name */
 			*b = '\0';
