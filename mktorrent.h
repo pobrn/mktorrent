@@ -10,34 +10,34 @@
 #endif
 
 /* string list */
-struct sl_node_s;
-typedef struct sl_node_s *sl_node;
-struct sl_node_s {
+struct slist_s;
+typedef struct slist_s slist_t;
+struct slist_s {
 	char *s;
-	sl_node next;
+	slist_t *next;
 };
 
-/* announce list */
-struct al_node_s;
-typedef struct al_node_s *al_node;
-struct al_node_s {
-	sl_node l;
-	al_node next;
+/* list of string lists */
+struct llist_s;
+typedef struct llist_s llist_t;
+struct llist_s {
+	slist_t *l;
+	llist_t *next;
 };
 
-/* file list node */
-struct fl_node_s;
-typedef struct fl_node_s *fl_node;
-struct fl_node_s {
+/* file list */
+struct flist_s;
+typedef struct flist_s flist_t;
+struct flist_s {
 	char *path;
 	off_t size;
-	fl_node next;
+	flist_t *next;
 };
 
 typedef struct {
 	/* options */
 	size_t piece_length;		/* piece length */
-	al_node announce_list;		/* announce URLs */
+	llist_t *announce_list;		/* announce URLs */
 	char *comment;			/* optional comment */
 	const char *torrent_name;	/* name of torrent (name of directory) */
 	char *metainfo_file_path;	/* absolute path to the metainfo file */
@@ -52,7 +52,7 @@ typedef struct {
 
 	/* information calculated by read_dir() */
 	unsigned long long size;	/* combined size of all files */
-	fl_node file_list;		/* list of files and their sizes */
+	flist_t *file_list;		/* list of files and their sizes */
 	unsigned int pieces;		/* number of pieces */
 } metafile_t;
 

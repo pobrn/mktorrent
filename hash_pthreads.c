@@ -75,7 +75,7 @@ static piece_t *get_free(queue_t *q, size_t piece_length)
 		r = q->free;
 		q->free = r->next;
 	} else if (q->buffers < q->buffers_max) {
-		r = malloc(sizeof(piece_t) + piece_length - 1);
+		r = malloc(sizeof(piece_t) - 1 + piece_length);
 		if (r == NULL) {
 			fprintf(stderr, "Out of memory.\n");
 			exit(EXIT_FAILURE);
@@ -199,14 +199,14 @@ static void *worker(void *data)
 
 static void read_files(metafile_t *m, queue_t *q, unsigned char *pos)
 {
-	int fd;					/* file descriptor */
-	fl_node f;				/* pointer to a place in the file
-						   list */
-	ssize_t r = 0;				/* number of bytes read from
-						   file(s) into the read buffer */
+	int fd;                         /* file descriptor */
+	flist_t *f;                     /* pointer to a place in the file
+	                                   list */
+	ssize_t r = 0;                  /* number of bytes read from
+	                                   file(s) into the read buffer */
 #ifndef NO_HASH_CHECK
-	unsigned long long counter = 0;		/* number of bytes hashed
-						   should match size when done */
+	unsigned long long counter = 0; /* number of bytes hashed
+	                                   should match size when done */
 #endif
 	piece_t *p = get_free(q, m->piece_length);
 

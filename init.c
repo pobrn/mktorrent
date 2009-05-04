@@ -128,13 +128,13 @@ static void set_absolute_file_path(metafile_t *m)
  * parse the announce URLs given as <url>[,<url>]* and
  * return a string list containing the URLs
  */
-static sl_node get_announces(char *s)
+static slist_t *get_announces(char *s)
 {
-	sl_node list, last;
+	slist_t *list, *last;
 	char *e;
 
 	/* allocate memory for the first node in the list */
-	list = last = malloc(sizeof(struct sl_node_s));
+	list = last = malloc(sizeof(slist_t));
 	if (list == NULL) {
 		fprintf(stderr, "Out of memory.\n");
 		exit(EXIT_FAILURE);
@@ -151,7 +151,7 @@ static sl_node get_announces(char *s)
 		s = e + 1;
 
 		/* append another node to the list */
-		last->next = malloc(sizeof(struct sl_node_s));
+		last->next = malloc(sizeof(slist_t));
 		last = last->next;
 		if (last == NULL) {
 			fprintf(stderr, "Out of memory.\n");
@@ -196,7 +196,7 @@ static int is_dir(metafile_t *m, char *target)
 
 	/* since we know the torrent is just a single file and we've
 	   already stat'ed it, we might as well set the file list */
-	m->file_list = malloc(sizeof(struct fl_node_s));
+	m->file_list = malloc(sizeof(flist_t));
 	if (m->file_list == NULL) {
 		fprintf(stderr, "Out of memory.\n");
 		exit(EXIT_FAILURE);
@@ -218,8 +218,8 @@ static int is_dir(metafile_t *m, char *target)
  */
 static int process_node(const char *path, const struct stat *sb, void *data)
 {
-	fl_node *p;		/* pointer to a node in the file list */
-	fl_node new_node;	/* place to store a newly created node */
+	flist_t **p;            /* pointer to a node in the file list */
+	flist_t *new_node;      /* place to store a newly created node */
 	metafile_t *m = data;
 
 	/* skip non-regular files */
@@ -249,7 +249,7 @@ static int process_node(const char *path, const struct stat *sb, void *data)
 		p = &((*p)->next);
 
 	/* create a new file list node for the file */
-	new_node = malloc(sizeof(struct fl_node_s));
+	new_node = malloc(sizeof(flist_t));
 	if (new_node == NULL) {
 		fprintf(stderr, "Out of memory.\n");
 		return -1;
@@ -328,12 +328,12 @@ static void print_help()
 /*
  * print the full announce list
  */
-static void print_announce_list(al_node list)
+static void print_announce_list(llist_t *list)
 {
 	unsigned int n;
 
 	for (n = 1; list; list = list->next, n++) {
-		sl_node l = list->l;
+		slist_t *l = list->l;
 
 		printf("    %u : %s\n", n, l->s);
 		for (l = l->next; l; l = l->next)
@@ -383,7 +383,7 @@ static void dump_options(metafile_t *m)
 EXPORT void init(metafile_t *m, int argc, char *argv[])
 {
 	int c;			/* return value of getopt() */
-	al_node announce_last = NULL;
+	llist_t *announce_last = NULL;
 #ifdef USE_LONG_OPTIONS
 	/* the option structure to pass to getopt_long() */
 	static struct option long_options[] = {
@@ -421,10 +421,10 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 		case 'a':
 			if (announce_last == NULL) {
 				m->announce_list = announce_last =
-					malloc(sizeof(struct al_node_s));
+					malloc(sizeof(llist_t));
 			} else {
 				announce_last->next =
-					malloc(sizeof(struct al_node_s));
+					malloc(sizeof(llist_t));
 				announce_last = announce_last->next;
 
 			}

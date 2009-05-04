@@ -37,13 +37,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 /*
  * write announce list
  */
-static void write_announce_list(FILE *f, al_node list)
+static void write_announce_list(FILE *f, llist_t *list)
 {
 	/* the announce list is a list of lists of urls */
 	fprintf(f, "13:announce-listl");
 	/* go through them all.. */
 	for (; list; list = list->next) {
-		sl_node l;
+		slist_t *l;
 
 		/* .. and print the lists */
 		fprintf(f, "l");
@@ -57,7 +57,7 @@ static void write_announce_list(FILE *f, al_node list)
 /*
  * write file list
  */
-static void write_file_list(FILE *f, fl_node list)
+static void write_file_list(FILE *f, flist_t *list)
 {
 	char *a, *b;
 

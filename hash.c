@@ -45,17 +45,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 EXPORT unsigned char *make_hash(metafile_t *m)
 {
-	fl_node f;		/* pointer to a place in the file list */
-	unsigned char *hash_string;	/* the hash string */
-	unsigned char *pos;	/* position in the hash string */
-	unsigned char *read_buf;	/* read buffer */
-	int fd;			/* file descriptor */
-	ssize_t r;		/* number of bytes read from file(s) into
-				   the read buffer */
-	SHA_CTX c;		/* SHA1 hashing context */
+	flist_t *f;                     /* pointer to a place in the file list */
+	unsigned char *hash_string;     /* the hash string */
+	unsigned char *pos;             /* position in the hash string */
+	unsigned char *read_buf;        /* read buffer */
+	int fd;                         /* file descriptor */
+	ssize_t r;                      /* number of bytes read from file(s) into
+	                                   the read buffer */
+	SHA_CTX c;                      /* SHA1 hashing context */
 #ifndef NO_HASH_CHECK
-	unsigned long long counter = 0;	/* number of bytes hashed
-					   should match size when done */
+	unsigned long long counter = 0; /* number of bytes hashed
+	                                   should match size when done */
 #endif
 
 	/* allocate memory for the hash string
