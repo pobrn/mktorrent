@@ -125,10 +125,10 @@ static void set_absolute_file_path(metafile_t *m)
 }
 
 /*
- * parse the announce URLs given as <url>[,<url>]* and
- * return a string list containing the URLs
+ * parse a comma separated list of strings <str>[,<str>]* and
+ * return a string list containing the substrings
  */
-static slist_t *get_announces(char *s)
+static slist_t *get_slist(char *s)
 {
 	slist_t *list, *last;
 	char *e;
@@ -159,7 +159,7 @@ static slist_t *get_announces(char *s)
 		}
 	}
 
-	/* set the last URL in the list */
+	/* set the last string in the list */
 	last->s = s;
 	last->next = NULL;
 
@@ -276,15 +276,15 @@ static void print_help()
 	printf(
 	  "Usage: mktorrent [OPTIONS] <target directory or filename>\n\n"
 	  "Options:\n"
-	  "-a, --announce=<url>[,<url>]* : specify the full announce URLs.\n"
-	  "                                at least one is required.\n"
-	  "                                additional -a adds backup trackers.\n"
+	  "-a, --announce=<url>[,<url>]* : specify the full announce URLs\n"
+	  "                                at least one is required\n"
+	  "                                additional -a adds backup trackers\n"
 	  "-c, --comment=<comment>       : add a comment to the metainfo\n"
 	  "-d, --no-date                 : don't write the creation date\n"
 	  "-h, --help                    : show this help screen\n"
 	  "-l, --piece-length=<n>        : set the piece length to 2^n bytes,\n"
-	  "                                default is 18, that is 2^18 = 256kb.\n"
-	  "-n, --name=<name>             : set the name of the torrent,\n"
+	  "                                default is 18, that is 2^18 = 256kb\n"
+	  "-n, --name=<name>             : set the name of the torrent\n"
 	  "                                default is the basename of the target\n"
 	  "-o, --output=<filename>       : set the path and filename of the created file\n"
 	  "                                default is <name>.torrent\n"
@@ -294,32 +294,34 @@ static void print_help()
 	  "                                default is 2\n"
 #endif
 	  "-v, --verbose                 : be verbose\n"
-	  "-w, --web-seed=<url>          : add web seed\n"
+	  "-w, --web-seed=<url>[,<url>]* : add web seed URLs\n"
+	  "                                additional -w adds more URLs\n"
 	  "\nPlease send bug reports, patches, feature requests, praise and\n"
 	  "general gossip about the program to: esmil@mailme.dk\n");
 #else
 	printf(
 	  "Usage: mktorrent [OPTIONS] <target directory or filename>\n\n"
 	  "Options:\n"
-	  "-a <url>[,<url]* : specify the full announce URLs.\n"
-	  "                   at least one is required.\n"
-	  "                   additional -a adds backup trackers.\n"
-	  "-c <comment>     : add a comment to the metainfo\n"
-	  "-d               : don't write the creation date\n"
-	  "-h               : show this help screen\n"
-	  "-l <n>           : set the piece length to 2^n bytes,\n"
-	  "                   default is 18, that is 2^18 = 256kb.\n"
-	  "-n <name>        : set the name of the torrent,\n"
-	  "                   default is the basename of the target\n"
-	  "-o <filename>    : set the path and filename of the created file\n"
-	  "                   default is <name>.torrent\n"
-	  "-p               : set the private flag\n"
+	  "-a <url>[,<url>]* : specify the full announce URLs\n"
+	  "                    at least one is required\n"
+	  "                    additional -a adds backup trackers\n"
+	  "-c <comment>      : add a comment to the metainfo\n"
+	  "-d                : don't write the creation date\n"
+	  "-h                : show this help screen\n"
+	  "-l <n>            : set the piece length to 2^n bytes,\n"
+	  "                    default is 18, that is 2^18 = 256kb\n"
+	  "-n <name>         : set the name of the torrent,\n"
+	  "                    default is the basename of the target\n"
+	  "-o <filename>     : set the path and filename of the created file\n"
+	  "                    default is <name>.torrent\n"
+	  "-p                : set the private flag\n"
 #ifdef USE_PTHREADS
-	  "-t <n>           : use <n> threads for calculating hashes\n"
-	  "                   default is 2\n"
+	  "-t <n>            : use <n> threads for calculating hashes\n"
+	  "                    default is 2\n"
 #endif
-	  "-v               : be verbose\n"
-	  "-w <url>         : add web seed\n"
+	  "-v                : be verbose\n"
+	  "-w <url>[,<url>]* : add web seed URLs\n"
+	  "                    additional -w adds more URLs\n"
 	  "\nPlease send bug reports, patches, feature requests, praise and\n"
 	  "general gossip about the program to: esmil@mailme.dk\n");
 #endif
@@ -339,6 +341,23 @@ static void print_announce_list(llist_t *list)
 		for (l = l->next; l; l = l->next)
 			printf("        %s\n", l->s);
 	}
+}
+
+/*
+ * print the list of web seed URLs
+ */
+static void print_web_seed_list(slist_t *list)
+{
+	printf("  Web Seed URL: ");
+
+	if (list == NULL) {
+		printf("none\n");
+		return;
+	}
+
+	printf("%s\n", list->s);
+	for (list = list->next; list; list = list->next)
+		printf("                %s\n", list->s);
 }
 
 /*
@@ -363,11 +382,7 @@ static void dump_options(metafile_t *m)
 	else
 		printf("yes\n");
 
-	printf("  Web Seed URL: ");
-	if (m->web_seed_url == NULL)
-		printf("none\n");
-	else
-		printf("%s\n", m->web_seed_url);
+	print_web_seed_list(m->web_seed_list);
 
 	printf("  Comment:      ");
 	if (m->comment == NULL)
@@ -378,12 +393,14 @@ static void dump_options(metafile_t *m)
 
 /*
  * parse and check the command line options given
- * and initiate all the global variables
+ * and fill out the appropriate fields of the
+ * metafile structure
  */
 EXPORT void init(metafile_t *m, int argc, char *argv[])
 {
 	int c;			/* return value of getopt() */
 	llist_t *announce_last = NULL;
+	slist_t *web_seed_last = NULL;
 #ifdef USE_LONG_OPTIONS
 	/* the option structure to pass to getopt_long() */
 	static struct option long_options[] = {
@@ -432,7 +449,7 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 				fprintf(stderr, "Out of memory.\n");
 				exit(EXIT_FAILURE);
 			}
-			announce_last->l = get_announces(optarg);
+			announce_last->l = get_slist(optarg);
 			break;
 		case 'c':
 			m->comment = optarg;
@@ -464,7 +481,16 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 			m->verbose = 1;
 			break;
 		case 'w':
-			m->web_seed_url = optarg;
+			if (web_seed_last == NULL) {
+				m->web_seed_list = web_seed_last =
+					get_slist(optarg);
+			} else {
+				web_seed_last->next =
+					get_slist(optarg);
+				web_seed_last = web_seed_last->next;
+			}
+			while (web_seed_last->next)
+				web_seed_last = web_seed_last->next;
 			break;
 		case '?':
 			fprintf(stderr, "Use -h for help.\n");

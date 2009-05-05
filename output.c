@@ -97,6 +97,20 @@ static void write_file_list(FILE *f, flist_t *list)
 }
 
 /*
+ * write web seed list
+ */
+static void write_web_seed_list(FILE *f, slist_t *list)
+{
+	/* print the entry and start the list */
+	fprintf(f, "8:url-listl");
+	/* go through the list and write each URL */
+	for (; list; list = list->next)
+		fprintf(f, "%zu:%s", strlen(list->s), list->s);
+	/* end the list */
+	fprintf(f, "e");
+}
+
+/*
  * write metainfo to the file stream using all the information
  * we've gathered so far and the hash string calculated
  */
@@ -150,9 +164,14 @@ EXPORT void write_metainfo(metafile_t *m, FILE *f, unsigned char *hash_string)
 	fprintf(f, "e");
 
 	/* add url-list if one is specified */
-	if (m->web_seed_url != NULL)
-		fprintf(f, "8:url-list%zu:%s",
-				strlen(m->web_seed_url), m->web_seed_url);
+	if (m->web_seed_list != NULL) {
+		if (m->web_seed_list->next == NULL)
+			fprintf(f, "8:url-list%zu:%s",
+					strlen(m->web_seed_list->s),
+					m->web_seed_list->s);
+		else
+			write_web_seed_list(f, m->web_seed_list);
+	}
 
 	/* end the root dictionary */
 	fprintf(f, "e");
