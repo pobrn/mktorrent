@@ -34,8 +34,8 @@ SRCS := $(SRCS:sha1.c=)
 LIBS += -lssl
 .endif
 
-.ifdef NO_LONG_OPTIONS
-DEFINES += -DNO_LONG_OPTIONS
+.ifdef USE_LONG_OPTIONS
+DEFINES += -DUSE_LONG_OPTIONS
 .endif
 
 .ifdef NO_HASH_CHECK

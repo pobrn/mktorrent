@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 #include <sys/stat.h>
 #include <unistd.h>		/* access(), read(), close(), getcwd() */
-#ifndef NO_LONG_OPTIONS
+#ifdef USE_LONG_OPTIONS
 #include <getopt.h>		/* getopt_long() */
 #endif
 #include <time.h>		/* time() */

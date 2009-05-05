@@ -25,9 +25,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <sys/stat.h>		/* the stat structure */
 #include <unistd.h>		/* getopt(), getcwd() */
 #include <string.h>		/* strcmp(), strlen(), strncpy() */
-#ifndef NO_LONG_OPTIONS
+#ifdef USE_LONG_OPTIONS
 #include <getopt.h>		/* getopt_long() */
-#endif /* NO_LONG_OPTIONS */
+#endif
 
 #include "mktorrent.h"
 #include "ftw.h"
@@ -295,7 +295,7 @@ static void read_dir(const char *dir)
  */
 static void print_help()
 {
-#ifndef NO_LONG_OPTIONS
+#ifdef USE_LONG_OPTIONS
 	printf(
 	  "Usage: mktorrent [OPTIONS] <target directory or filename>\n\n"
 	  "Options:\n"
@@ -407,7 +407,7 @@ EXPORT void init(int argc, char *argv[])
 {
 	int c;			/* return value of getopt() */
 	al_node announce_last = NULL;
-#ifndef NO_LONG_OPTIONS
+#ifdef USE_LONG_OPTIONS
 	/* the option structure to pass to getopt_long() */
 	static struct option long_options[] = {
 		{"announce", 1, NULL, 'a'},
@@ -427,18 +427,17 @@ EXPORT void init(int argc, char *argv[])
 	};
 #endif
 
+	/* now parse the command line options given */
 #ifdef USE_PTHREADS
 #define OPT_STRING "a:c:dhl:n:o:pt:vw:"
 #else
 #define OPT_STRING "a:c:dhl:n:o:pvw:"
 #endif
-
-#ifdef NO_LONG_OPTIONS
-	/* now parse the command line options given */
-	while ((c = getopt(argc, argv, OPT_STRING)) != -1) {
-#else
+#ifdef USE_LONG_OPTIONS
 	while ((c = getopt_long(argc, argv, OPT_STRING,
 				long_options, NULL)) != -1) {
+#else
+	while ((c = getopt(argc, argv, OPT_STRING)) != -1) {
 #endif
 #undef OPT_STRING
 		switch (c) {

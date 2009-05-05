@@ -31,9 +31,8 @@
 # own.
 #USE_OPENSSL = 1
 
-# Disable support for long options. Will make the program smaller and perhaps
-# even more portable.
-#NO_LONG_OPTIONS = 1
+# Enable long options, started with two dashes.
+#USE_LONG_OPTIONS = 1
 
 # Disable a redundent check to see if the amount of bytes read from files while
 # hashing matches the sum of reported file sizes. I've never seen this fail. It
