@@ -31,7 +31,7 @@ LIBS += -lpthread
 .ifdef USE_OPENSSL
 DEFINES += -DUSE_OPENSSL
 SRCS := $(SRCS:sha1.c=)
-LIBS += -lssl
+LIBS += -lcrypto
 .endif
 
 .ifdef USE_LONG_OPTIONS
