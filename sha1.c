@@ -21,7 +21,7 @@
 #include <stdio.h>
 #endif
 #include <string.h>
-#include <stdint.h>
+#include <inttypes.h>
 
 #define EXPORT
 #endif /* ALLINONE */

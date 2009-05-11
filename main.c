@@ -36,7 +36,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #ifdef USE_OPENSSL
 #include <openssl/sha.h> /* SHA1(), SHA_DIGEST_LENGTH */
 #else
-#include <stdint.h>
+#include <inttypes.h>
 #endif
 #ifdef USE_PTHREADS
 #include <alloca.h>      /* alloca() */

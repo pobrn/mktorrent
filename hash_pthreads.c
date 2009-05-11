@@ -27,7 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #ifdef USE_OPENSSL
 #include <openssl/sha.h> /* SHA1() - remember to compile with -lssl */
 #else
-#include <stdint.h>
+#include <inttypes.h>
 #include "sha1.h"
 #endif
 #include <pthread.h>     /* pthread functions and data structures */
