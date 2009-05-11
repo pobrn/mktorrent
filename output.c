@@ -18,7 +18,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
 #ifndef ALLINONE
 
-#include <stdlib.h>		/* off_t etc. */
 #include <stdio.h>		/* printf() etc. */
 #include <string.h>		/* strlen() etc. */
 #include <time.h>		/* time() */
@@ -48,7 +47,8 @@ static void write_announce_list(FILE *f, llist_t *list)
 		/* .. and print the lists */
 		fprintf(f, "l");
 		for (l = list->l; l; l = l->next)
-			fprintf(f, "%zu:%s", strlen(l->s), l->s);
+			fprintf(f, "%lu:%s",
+					(unsigned long)strlen(l->s), l->s);
 		fprintf(f, "e");
 	}
 	fprintf(f, "e");
@@ -68,8 +68,7 @@ static void write_file_list(FILE *f, flist_t *list)
 		/* the file list contains a dictionary for every file
 		   with entries for the length and path
 		   write the length first */
-		fprintf(f, "d6:lengthi%llue4:pathl",
-			(unsigned long long) list->size);
+		fprintf(f, "d6:lengthi%lue4:pathl", list->size);
 		/* the file path is written as a list of subdirectories
 		   and the last entry is the filename
 		   sorry this code is even uglier than the rest */
@@ -80,7 +79,7 @@ static void write_file_list(FILE *f, flist_t *list)
 			   will only write the first subdirectory name */
 			*b = '\0';
 			/* print it bencoded */
-			fprintf(f, "%zu:%s", strlen(a), a);
+			fprintf(f, "%lu:%s", (unsigned long)strlen(a), a);
 			/* undo our alteration to the string */
 			*b = DIRSEP_CHAR;
 			/* and move a to the beginning of the next
@@ -89,7 +88,7 @@ static void write_file_list(FILE *f, flist_t *list)
 		}
 		/* now print the filename bencoded and end the
 		   path name list and file dictionary */
-		fprintf(f, "%zu:%see", strlen(a), a);
+		fprintf(f, "%lu:%see", (unsigned long)strlen(a), a);
 	}
 
 	/* whew, now end the file list */
@@ -105,7 +104,7 @@ static void write_web_seed_list(FILE *f, slist_t *list)
 	fprintf(f, "8:url-listl");
 	/* go through the list and write each URL */
 	for (; list; list = list->next)
-		fprintf(f, "%zu:%s", strlen(list->s), list->s);
+		fprintf(f, "%lu:%s", (unsigned long)strlen(list->s), list->s);
 	/* end the list */
 	fprintf(f, "e");
 }
@@ -122,21 +121,24 @@ EXPORT void write_metainfo(metafile_t *m, FILE *f, unsigned char *hash_string)
 
 	/* every metainfo file is one big dictonary
 	   and the first entry is the announce URL */
-	fprintf(f, "d8:announce%zu:%s",
-		strlen(m->announce_list->l->s), m->announce_list->l->s);
+	fprintf(f, "d8:announce%lu:%s",
+		(unsigned long)strlen(m->announce_list->l->s),
+		m->announce_list->l->s);
 	/* write the announce-list entry if we have
 	   more than one announce URL */
 	if (m->announce_list->next || m->announce_list->l->next)
 		write_announce_list(f, m->announce_list);
 	/* add the comment if one is specified */
 	if (m->comment != NULL)
-		fprintf(f, "7:comment%zu:%s", strlen(m->comment), m->comment);
+		fprintf(f, "7:comment%lu:%s",
+				(unsigned long)strlen(m->comment),
+				m->comment);
 	/* I made this! */
 	fprintf(f, "10:created by13:mktorrent " VERSION);
 	/* add the creation date */
 	if (!m->no_creation_date)
-		fprintf(f, "13:creation datei%ue",
-			(unsigned int) time(NULL));
+		fprintf(f, "13:creation datei%lde",
+			(long)time(NULL));
 
 	/* now here comes the info section
 	   it is yet another dictionary */
@@ -144,15 +146,14 @@ EXPORT void write_metainfo(metafile_t *m, FILE *f, unsigned char *hash_string)
 	/* first entry is either 'length', which specifies the length of a
 	   single file torrent, or a list of files and their respective sizes */
 	if (!m->target_is_directory)
-		fprintf(f, "6:lengthi%llue",
-			(unsigned long long) m->file_list->size);
+		fprintf(f, "6:lengthi%lue", m->file_list->size);
 	else
 		write_file_list(f, m->file_list);
 
 	/* the info section also contains the name of the torrent,
 	   the piece length and the hash string */
-	fprintf(f, "4:name%zu:%s12:piece lengthi%zue6:pieces%u:",
-		strlen(m->torrent_name), m->torrent_name,
+	fprintf(f, "4:name%lu:%s12:piece lengthi%ue6:pieces%u:",
+		(unsigned long)strlen(m->torrent_name), m->torrent_name,
 		m->piece_length, m->pieces * SHA_DIGEST_LENGTH);
 	fwrite(hash_string, 1, m->pieces * SHA_DIGEST_LENGTH, f);
 
@@ -166,8 +167,8 @@ EXPORT void write_metainfo(metafile_t *m, FILE *f, unsigned char *hash_string)
 	/* add url-list if one is specified */
 	if (m->web_seed_list != NULL) {
 		if (m->web_seed_list->next == NULL)
-			fprintf(f, "8:url-list%zu:%s",
-					strlen(m->web_seed_list->s),
+			fprintf(f, "8:url-list%lu:%s",
+					(unsigned long)strlen(m->web_seed_list->s),
 					m->web_seed_list->s);
 		else
 			write_web_seed_list(f, m->web_seed_list);

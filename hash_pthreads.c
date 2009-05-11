@@ -17,19 +17,20 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
 #ifndef ALLINONE
-#include <stdlib.h>		/* exit(), malloc() */
-#include <errno.h>		/* errno */
-#include <string.h>		/* strerror() */
-#include <stdio.h>		/* printf() etc. */
-#include <fcntl.h>		/* open() */
-#include <unistd.h>		/* access(), read(), close() */
+#include <stdlib.h>      /* exit(), malloc() */
+#include <alloca.h>      /* alloca() */
+#include <errno.h>       /* errno */
+#include <string.h>      /* strerror() */
+#include <stdio.h>       /* printf() etc. */
+#include <fcntl.h>       /* open() */
+#include <unistd.h>      /* access(), read(), close() */
 #ifdef USE_OPENSSL
-#include <openssl/sha.h>	/* SHA1() - remember to compile with -lssl */
+#include <openssl/sha.h> /* SHA1() - remember to compile with -lssl */
 #else
 #include <stdint.h>
 #include "sha1.h"
 #endif
-#include <pthread.h>		/* pthread functions and data structures */
+#include <pthread.h>     /* pthread functions and data structures */
 
 #include "mktorrent.h"
 
@@ -205,7 +206,7 @@ static void read_files(metafile_t *m, queue_t *q, unsigned char *pos)
 	ssize_t r = 0;                  /* number of bytes read from
 	                                   file(s) into the read buffer */
 #ifndef NO_HASH_CHECK
-	unsigned long long counter = 0; /* number of bytes hashed
+	unsigned long counter = 0;      /* number of bytes hashed
 	                                   should match size when done */
 #endif
 	piece_t *p = get_free(q, m->piece_length);
@@ -261,7 +262,7 @@ static void read_files(metafile_t *m, queue_t *q, unsigned char *pos)
 #ifndef NO_HASH_CHECK
 	counter += r;
 	if (counter != m->size) {
-		fprintf(stderr, "Counted %llu bytes, but hashed %llu bytes. "
+		fprintf(stderr, "Counted %lu bytes, but hashed %lu bytes. "
 				"Something is wrong...\n", m->size, counter);
 		exit(EXIT_FAILURE);
 	}

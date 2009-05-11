@@ -17,29 +17,30 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
 
-#include <stdlib.h>		/* exit() */
-#include <errno.h>		/* errno */
-#include <string.h>		/* strerror() */
-#include <stdio.h>		/* printf() etc. */
-#include <sys/stat.h>		/* S_IRUSR, S_IWUSR, S_IRGRP, S_IROTH */
-#include <fcntl.h>		/* open() */
+#include <stdlib.h>      /* exit() */
+#include <errno.h>       /* errno */
+#include <string.h>      /* strerror() */
+#include <stdio.h>       /* printf() etc. */
+#include <sys/stat.h>    /* S_IRUSR, S_IWUSR, S_IRGRP, S_IROTH */
+#include <fcntl.h>       /* open() */
 
 #ifdef ALLINONE
 
 #include <sys/stat.h>
-#include <unistd.h>		/* access(), read(), close(), getcwd() */
+#include <unistd.h>      /* access(), read(), close(), getcwd() */
 #ifdef USE_LONG_OPTIONS
-#include <getopt.h>		/* getopt_long() */
+#include <getopt.h>      /* getopt_long() */
 #endif
-#include <time.h>		/* time() */
-#include <dirent.h>		/* opendir(), closedir(), readdir() etc. */
+#include <time.h>        /* time() */
+#include <dirent.h>      /* opendir(), closedir(), readdir() etc. */
 #ifdef USE_OPENSSL
-#include <openssl/sha.h>	/* SHA1(), SHA_DIGEST_LENGTH */
+#include <openssl/sha.h> /* SHA1(), SHA_DIGEST_LENGTH */
 #else
 #include <stdint.h>
 #endif
 #ifdef USE_PTHREADS
-#include <pthread.h>		/* pthread functions and data structures */
+#include <alloca.h>      /* alloca() */
+#include <pthread.h>     /* pthread functions and data structures */
 #endif
 
 #define EXPORT static
@@ -82,8 +83,8 @@ extern void write_metainfo(metafile_t *m, FILE * file, unsigned char *hash_strin
  */
 static FILE *open_file(const char *path)
 {
-	int fd;			/* file descriptor */
-	FILE *f;		/* file stream */
+	int fd;  /* file descriptor */
+	FILE *f; /* file stream */
 
 	/* open and create the file if it doesn't exist already */
 	fd = open(path, O_WRONLY | O_CREAT | O_EXCL,
@@ -143,7 +144,7 @@ int main(int argc, char *argv[])
 		/* information calculated by read_dir() */
 		0,    /* size */
 		NULL, /* file_list */
-		0    /* pieces */
+		0     /* pieces */
 	};
 
 	/* print who we are */

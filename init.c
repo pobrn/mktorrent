@@ -372,7 +372,7 @@ static void dump_options(metafile_t *m)
 
 	printf("  Torrent name: %s\n"
 	       "  Metafile:     %s\n"
-	       "  Piece length: %zu\n"
+	       "  Piece length: %u\n"
 	       "  Be verbose:   yes\n",
 	       m->torrent_name, m->metainfo_file_path, m->piece_length);
 
@@ -568,7 +568,7 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 
 	/* now print the size and piece count if we should be verbose */
 	if (m->verbose)
-		printf("\n%llu bytes in all.\n"
-		       "That's %u pieces of %zu bytes each.\n\n",
-		       m->size, m->pieces, m->piece_length);
+		printf("\n%lu bytes in all.\n"
+			"That's %u pieces of %u bytes each.\n\n",
+			m->size, m->pieces, m->piece_length);
 }
