@@ -568,7 +568,7 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 
 	/* now print the size and piece count if we should be verbose */
 	if (m->verbose)
-		printf("\n%lu bytes in all.\n"
+		printf("\n" PRIfz " bytes in all.\n"
 			"That's %u pieces of %u bytes each.\n\n",
 			m->size, m->pieces, m->piece_length);
 }

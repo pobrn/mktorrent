@@ -54,7 +54,7 @@ EXPORT unsigned char *make_hash(metafile_t *m)
 	                                   the read buffer */
 	SHA_CTX c;                      /* SHA1 hashing context */
 #ifndef NO_HASH_CHECK
-	unsigned long counter = 0;      /* number of bytes hashed
+	fsize_t counter = 0;            /* number of bytes hashed
 	                                   should match size when done */
 #endif
 
@@ -130,7 +130,8 @@ EXPORT unsigned char *make_hash(metafile_t *m)
 #ifndef NO_HASH_CHECK
 	counter += r;
 	if (counter != m->size) {
-		fprintf(stderr, "Counted %lu bytes, but hashed %lu bytes. "
+		fprintf(stderr, "Counted " PRIfz " bytes, "
+				"but hashed " PRIfz " bytes. "
 				"Something is wrong...\n", m->size, counter);
 		exit(EXIT_FAILURE);
 	}

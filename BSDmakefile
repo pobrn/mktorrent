@@ -38,6 +38,10 @@ LIBS += -lcrypto
 DEFINES += -DUSE_LONG_OPTIONS
 .endif
 
+.ifdef USE_LONG_LONG
+DEFINES += -DUSE_LONG_LONG
+.endif
+
 .ifdef NO_HASH_CHECK
 DEFINES += -DNO_HASH_CHECK
 .endif

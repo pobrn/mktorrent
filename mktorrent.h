@@ -9,6 +9,15 @@
 #define DIRSEP_CHAR '/'
 #endif
 
+/* fsize_t */
+#ifdef USE_LONG_LONG
+typedef unsigned long long fsize_t;
+#define PRIfz "%llu"
+#else
+typedef unsigned long fsize_t;
+#define PRIfz "%lu"
+#endif
+
 /* string list */
 struct slist_s;
 typedef struct slist_s slist_t;
@@ -30,7 +39,7 @@ struct flist_s;
 typedef struct flist_s flist_t;
 struct flist_s {
 	char *path;
-	unsigned long size;
+	fsize_t size;
 	flist_t *next;
 };
 
@@ -51,7 +60,7 @@ typedef struct {
 #endif
 
 	/* information calculated by read_dir() */
-	unsigned long size;        /* combined size of all files */
+	fsize_t size;              /* combined size of all files */
 	flist_t *file_list;        /* list of files and their sizes */
 	unsigned int pieces;       /* number of pieces */
 } metafile_t;

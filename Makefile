@@ -34,6 +34,10 @@
 # Enable long options, started with two dashes.
 #USE_LONG_OPTIONS = 1
 
+# Use the C type 'unsigned long long'. This is needed on 32bit machines
+# to handle torrents > 2Gb properly. Some compilers might not like this.
+#USE_LONG_LONG = 1
+
 # Disable a redundent check to see if the amount of bytes read from files while
 # hashing matches the sum of reported file sizes. I've never seen this fail. It
 # will fail if you change files yet to be hashed while mktorrent is running,
