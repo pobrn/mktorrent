@@ -500,10 +500,10 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 
 	/* set the correct piece length.
 	   default is 2^18 = 256kb. */
-	if (m->piece_length < 15 || m->piece_length > 25) {
+	if (m->piece_length < 15 || m->piece_length > 28) {
 		fprintf(stderr,
 			"The piece length must be a number between "
-			"15 and 25.\n");
+			"15 and 28.\n");
 		exit(EXIT_FAILURE);
 	}
 	m->piece_length = 1 << m->piece_length;
