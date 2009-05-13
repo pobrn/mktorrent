@@ -20,8 +20,10 @@
 # Default settings shown
 #CC      = cc
 #CFLAGS  = -O2 -Wall
+#LDFLAGS =
 #INSTALL = install
 #PREFIX  = /usr/local
+#DESTDIR =
 
 # Use multiple POSIX threads for calculating hashes. This should be slightly
 # faster. Much faster on systems with multiple CPUs and fast harddrives.
@@ -35,7 +37,7 @@
 #USE_LONG_OPTIONS = 1
 
 # Use the C type 'unsigned long long'. This is needed on 32bit machines
-# to handle torrents > 2Gb properly. Some compilers might not like this.
+# to handle torrents > 4Gb properly. Some compilers might not like this.
 #USE_LONG_LONG = 1
 
 # Disable a redundent check to see if the amount of bytes read from files while
