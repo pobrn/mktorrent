@@ -272,10 +272,10 @@ static int process_node(const char *path, const struct stat *sb, void *data)
  */
 static void print_help()
 {
-#ifdef USE_LONG_OPTIONS
 	printf(
 	  "Usage: mktorrent [OPTIONS] <target directory or filename>\n\n"
 	  "Options:\n"
+#ifdef USE_LONG_OPTIONS
 	  "-a, --announce=<url>[,<url>]* : specify the full announce URLs\n"
 	  "                                at least one is required\n"
 	  "                                additional -a adds backup trackers\n"
@@ -296,12 +296,7 @@ static void print_help()
 	  "-v, --verbose                 : be verbose\n"
 	  "-w, --web-seed=<url>[,<url>]* : add web seed URLs\n"
 	  "                                additional -w adds more URLs\n"
-	  "\nPlease send bug reports, patches, feature requests, praise and\n"
-	  "general gossip about the program to: esmil@mailme.dk\n");
 #else
-	printf(
-	  "Usage: mktorrent [OPTIONS] <target directory or filename>\n\n"
-	  "Options:\n"
 	  "-a <url>[,<url>]* : specify the full announce URLs\n"
 	  "                    at least one is required\n"
 	  "                    additional -a adds backup trackers\n"
@@ -322,9 +317,9 @@ static void print_help()
 	  "-v                : be verbose\n"
 	  "-w <url>[,<url>]* : add web seed URLs\n"
 	  "                    additional -w adds more URLs\n"
-	  "\nPlease send bug reports, patches, feature requests, praise and\n"
-	  "general gossip about the program to: esmil@mailme.dk\n");
 #endif
+	  "\nPlease send bug reports, patches, feature requests, praise and\n"
+	  "general gossip about the program to: esmil@users.sourceforge.net\n");
 }
 
 /*
