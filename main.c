@@ -74,7 +74,7 @@ extern void init(metafile_t *m, int argc, char *argv[]);
 /* hash.c */
 extern unsigned char *make_hash(metafile_t *m);
 /* output.c */
-extern void write_metainfo(metafile_t *m, FILE * file, unsigned char *hash_string);
+extern void write_metainfo(FILE *f, metafile_t *m, unsigned char *hash_string);
 #endif /* ALLINONE */
 
 /*
@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
 	file = open_file(m.metainfo_file_path);
 
 	/* calculate hash string and write the metainfo to file */
-	write_metainfo(&m, file, make_hash(&m));
+	write_metainfo(file, &m, make_hash(&m));
 
 	/* close the file stream */
 	close_file(file);

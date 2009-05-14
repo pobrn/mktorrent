@@ -113,7 +113,7 @@ static void write_web_seed_list(FILE *f, slist_t *list)
  * write metainfo to the file stream using all the information
  * we've gathered so far and the hash string calculated
  */
-EXPORT void write_metainfo(metafile_t *m, FILE *f, unsigned char *hash_string)
+EXPORT void write_metainfo(FILE *f, metafile_t *m, unsigned char *hash_string)
 {
 	/* let the user know we've started writing the metainfo file */
 	printf("Writing metainfo file... ");
