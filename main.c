@@ -86,9 +86,14 @@ static FILE *open_file(const char *path)
 	int fd;  /* file descriptor */
 	FILE *f; /* file stream */
 
-	/* open and create the file if it doesn't exist already */
+	/* open and create the file if it doesn't exist already
+	   it seems S_IGRP and S_IROTH isn't defined on mingw */
 	fd = open(path, O_WRONLY | O_CREAT | O_EXCL,
+#if defined S_IRGRP && defined S_IROTH
 		       S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+#else
+		       S_IRUSR | S_IWUSR);
+#endif
 	if (fd < 0) {
 		fprintf(stderr, "Error creating '%s': %s\n",
 				path, strerror(errno));
