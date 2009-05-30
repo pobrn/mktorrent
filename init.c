@@ -250,11 +250,11 @@ static int process_node(const char *path, const struct stat *sb, void *data)
 
 	/* create a new file list node for the file */
 	new_node = malloc(sizeof(flist_t));
-	if (new_node == NULL) {
+	if (new_node == NULL ||
+			(new_node->path = strdup(path)) == NULL) {
 		fprintf(stderr, "Out of memory.\n");
 		return -1;
 	}
-	new_node->path = strdup(path);
 	new_node->size = sb->st_size;
 
 	/* now insert the node there */
