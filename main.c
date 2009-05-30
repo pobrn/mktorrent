@@ -77,6 +77,17 @@ extern unsigned char *make_hash(metafile_t *m);
 extern void write_metainfo(FILE *f, metafile_t *m, unsigned char *hash_string);
 #endif /* ALLINONE */
 
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+
+#ifndef S_IRGRP
+#define S_IRGRP 0
+#endif
+#ifndef S_IROTH
+#define S_IROTH 0
+#endif
+
 /*
  * create and open the metainfo file for writing and create a stream for it
  * we don't want to overwrite anything, so abort if the file is already there
@@ -86,14 +97,9 @@ static FILE *open_file(const char *path)
 	int fd;  /* file descriptor */
 	FILE *f; /* file stream */
 
-	/* open and create the file if it doesn't exist already
-	   it seems S_IGRP and S_IROTH isn't defined on mingw */
-	fd = open(path, O_WRONLY | O_CREAT | O_EXCL,
-#if defined S_IRGRP && defined S_IROTH
+	/* open and create the file if it doesn't exist already */
+	fd = open(path, O_WRONLY | O_BINARY | O_CREAT | O_EXCL,
 		       S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-#else
-		       S_IRUSR | S_IWUSR);
-#endif
 	if (fd < 0) {
 		fprintf(stderr, "Error creating '%s': %s\n",
 				path, strerror(errno));
@@ -101,7 +107,7 @@ static FILE *open_file(const char *path)
 	}
 
 	/* create the stream from this filedescriptor */
-	f = fdopen(fd, "w");
+	f = fdopen(fd, "wb");
 	if (f == NULL) {
 		fprintf(stderr,	"Error creating stream for '%s': %s\n",
 				path, strerror(errno));

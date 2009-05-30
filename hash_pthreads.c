@@ -42,6 +42,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #define PROGRESS_PERIOD 200000
 #endif
 
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+
 struct piece_s;
 typedef struct piece_s piece_t;
 struct piece_s {
@@ -215,7 +219,7 @@ static void read_files(metafile_t *m, queue_t *q, unsigned char *pos)
 	for (f = m->file_list; f; f = f->next) {
 
 		/* open the current file for reading */
-		if ((fd = open(f->path, O_RDONLY)) == -1) {
+		if ((fd = open(f->path, O_RDONLY | O_BINARY)) == -1) {
 			fprintf(stderr, "Error opening '%s' for reading: %s\n",
 					f->path, strerror(errno));
 			exit(EXIT_FAILURE);
