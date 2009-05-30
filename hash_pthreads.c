@@ -18,7 +18,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
 #ifndef ALLINONE
 #include <stdlib.h>      /* exit(), malloc() */
-#include <alloca.h>      /* alloca() */
 #include <errno.h>       /* errno */
 #include <string.h>      /* strerror() */
 #include <stdio.h>       /* printf() etc. */
@@ -290,7 +289,7 @@ EXPORT unsigned char *make_hash(metafile_t *m)
 	unsigned int i;
 	int err;
 
-	workers = alloca(m->threads * sizeof(pthread_t));
+	workers = malloc(m->threads * sizeof(pthread_t));
 	hash_string = malloc(m->pieces * SHA_DIGEST_LENGTH);
 	if (workers == NULL || hash_string == NULL)
 		return NULL;
@@ -339,6 +338,8 @@ EXPORT unsigned char *make_hash(metafile_t *m)
 			exit(EXIT_FAILURE);
 		}
 	}
+
+	free(workers);
 
 	/* the progress printer should be done by now too */
 	err = pthread_join(print_progress_thread, NULL);
