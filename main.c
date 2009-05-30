@@ -18,6 +18,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
 
 #include <stdlib.h>      /* exit() */
+#include <sys/types.h>   /* off_t */
 #include <errno.h>       /* errno */
 #include <string.h>      /* strerror() */
 #include <stdio.h>       /* printf() etc. */
@@ -25,7 +26,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <fcntl.h>       /* open() */
 
 #ifdef ALLINONE
-
 #include <sys/stat.h>
 #include <unistd.h>      /* access(), read(), close(), getcwd() */
 #ifdef USE_LONG_OPTIONS
@@ -44,7 +44,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #endif
 
 #define EXPORT static
-#else
+#else  /* ALLINONE */
 
 #define EXPORT
 #endif /* ALLINONE */

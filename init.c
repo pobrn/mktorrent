@@ -17,16 +17,16 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
 #ifndef ALLINONE
-
-#include <stdlib.h>		/* exit() */
-#include <errno.h>		/* errno */
-#include <string.h>		/* strerror() */
-#include <stdio.h>		/* printf() etc. */
-#include <sys/stat.h>		/* the stat structure */
-#include <unistd.h>		/* getopt(), getcwd() */
-#include <string.h>		/* strcmp(), strlen(), strncpy() */
+#include <stdlib.h>       /* exit() */
+#include <sys/types.h>    /* off_t */
+#include <errno.h>        /* errno */
+#include <string.h>       /* strerror() */
+#include <stdio.h>        /* printf() etc. */
+#include <sys/stat.h>     /* the stat structure */
+#include <unistd.h>       /* getopt(), getcwd() */
+#include <string.h>       /* strcmp(), strlen(), strncpy() */
 #ifdef USE_LONG_OPTIONS
-#include <getopt.h>		/* getopt_long() */
+#include <getopt.h>       /* getopt_long() */
 #endif
 
 #include "mktorrent.h"
@@ -563,7 +563,7 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 
 	/* now print the size and piece count if we should be verbose */
 	if (m->verbose)
-		printf("\n" PRIfz " bytes in all.\n"
+		printf("\n%" PRIoff " bytes in all.\n"
 			"That's %u pieces of %u bytes each.\n\n",
 			m->size, m->pieces, m->piece_length);
 }

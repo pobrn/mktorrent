@@ -38,8 +38,8 @@ ifdef USE_LONG_OPTIONS
 DEFINES += -DUSE_LONG_OPTIONS
 endif
 
-ifdef USE_LONG_LONG
-DEFINES += -DUSE_LONG_LONG
+ifdef USE_LARGE_FILES
+DEFINES += -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
 endif
 
 ifdef NO_HASH_CHECK
@@ -54,11 +54,13 @@ ifdef DEBUG
 DEFINES += -DDEBUG
 endif
 
+OFFPRFX = $(shell ./prefix)
+
 OBJS = $(SRCS:.c=.o)
 
 all: $(program)
 
-%.o: %.c $(HEADERS)
-	$(CC) $(CFLAGS) $(DEFINES) -DVERSION="\"$(version)\"" -c $<
+%.o: %.c $(HEADERS) prefix
+	$(CC) $(CFLAGS) $(DEFINES) -DPRIoff="\"$(OFFPRFX)d\"" -DVERSION="\"$(version)\"" -c $<
 
 include rules.mk

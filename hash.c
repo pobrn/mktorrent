@@ -17,16 +17,16 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
 #ifndef ALLINONE
-
-#include <stdlib.h>		/* exit() */
-#include <errno.h>		/* errno */
-#include <string.h>		/* strerror() */
-#include <stdio.h>		/* printf() etc. */
-#include <fcntl.h>		/* open() */
-#include <unistd.h>		/* read(), close() */
+#include <stdlib.h>       /* exit() */
+#include <sys/types.h>    /* off_t */
+#include <errno.h>        /* errno */
+#include <string.h>       /* strerror() */
+#include <stdio.h>        /* printf() etc. */
+#include <fcntl.h>        /* open() */
+#include <unistd.h>       /* read(), close() */
 
 #ifdef USE_OPENSSL
-#include <openssl/sha.h>	/* SHA1() - remember to compile with -lssl */
+#include <openssl/sha.h>  /* SHA1() */
 #else
 #include <inttypes.h>
 #include "sha1.h"
@@ -58,7 +58,7 @@ EXPORT unsigned char *make_hash(metafile_t *m)
 	                                   the read buffer */
 	SHA_CTX c;                      /* SHA1 hashing context */
 #ifndef NO_HASH_CHECK
-	fsize_t counter = 0;            /* number of bytes hashed
+	off_t counter = 0;              /* number of bytes hashed
 	                                   should match size when done */
 #endif
 
@@ -82,7 +82,11 @@ EXPORT unsigned char *make_hash(metafile_t *m)
 	for (f = m->file_list; f; f = f->next) {
 
 		/* open the current file for reading */
+#if defined _LARGEFILE_SOURCE && defined O_LARGEFILE
+		if ((fd = open(f->path, O_RDONLY | O_BINARY | O_LARGEFILE)) == -1) {
+#else
 		if ((fd = open(f->path, O_RDONLY | O_BINARY)) == -1) {
+#endif
 			fprintf(stderr, "Error opening '%s' for reading: %s\n",
 					f->path, strerror(errno));
 			exit(EXIT_FAILURE);
@@ -138,8 +142,8 @@ EXPORT unsigned char *make_hash(metafile_t *m)
 #ifndef NO_HASH_CHECK
 	counter += r;
 	if (counter != m->size) {
-		fprintf(stderr, "Counted " PRIfz " bytes, "
-				"but hashed " PRIfz " bytes. "
+		fprintf(stderr, "Counted %" PRIoff " bytes, "
+				"but hashed %" PRIoff " bytes. "
 				"Something is wrong...\n", m->size, counter);
 		exit(EXIT_FAILURE);
 	}

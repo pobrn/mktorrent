@@ -38,8 +38,8 @@ LIBS += -lcrypto
 DEFINES += -DUSE_LONG_OPTIONS
 .endif
 
-.ifdef USE_LONG_LONG
-DEFINES += -DUSE_LONG_LONG
+.ifdef USE_LARGE_FILES
+DEFINES += -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
 .endif
 
 .ifdef NO_HASH_CHECK
@@ -60,8 +60,8 @@ all: $(program)
 
 .SUFFIXES: .o .c
 .c.o:
-	$(CC) $(CFLAGS) $(DEFINES) -DVERSION="\"$(version)\"" -c $(.IMPSRC)
+	$(CC) $(CFLAGS) $(DEFINES) -DPRIoff="\"`./prefix`d\"" -DVERSION="\"$(version)\"" -c $(.IMPSRC)
 
-$(OBJS): $(HEADERS)
+$(OBJS): $(HEADERS) prefix
 
 .include "rules.mk"
