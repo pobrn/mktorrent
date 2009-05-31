@@ -119,12 +119,12 @@ again:
 	return r;
 }
 
-static void put_free(queue_t *q, piece_t *p)
+static void put_free(queue_t *q, piece_t *p, unsigned int hashed)
 {
 	pthread_mutex_lock(&q->mutex_free);
 	p->next = q->free;
 	q->free = p;
-	q->pieces_hashed++;
+	q->pieces_hashed += hashed;
 	pthread_mutex_unlock(&q->mutex_free);
 	pthread_cond_signal(&q->cond_full);
 }
@@ -195,7 +195,7 @@ static void *worker(void *data)
 		SHA1_Init(&c);
 		SHA1_Update(&c, p->data, p->len);
 		SHA1_Final(p->dest, &c);
-		put_free(q, p);
+		put_free(q, p, 1);
 	}
 
 	return NULL;
@@ -233,20 +233,22 @@ static void read_files(metafile_t *m, queue_t *q, unsigned char *pos)
 				exit(EXIT_FAILURE);
 			}
 
-			r += d;
-
-			if (r < m->piece_length)
+			if (d == 0) /* end of file */
 				break;
 
-			p->dest = pos;
-			p->len = m->piece_length;
-			put_full(q, p);
-			pos += SHA_DIGEST_LENGTH;
+			r += d;
+
+			if (r == m->piece_length) {
+				p->dest = pos;
+				p->len = m->piece_length;
+				put_full(q, p);
+				pos += SHA_DIGEST_LENGTH;
 #ifndef NO_HASH_CHECK
-			counter += r;
+				counter += r;
 #endif
-			r = 0;
-			p = get_free(q, m->piece_length);
+				r = 0;
+				p = get_free(q, m->piece_length);
+			}
 		}
 
 		/* now close the file */
@@ -258,9 +260,12 @@ static void read_files(metafile_t *m, queue_t *q, unsigned char *pos)
 	}
 
 	/* finally append the hash of the last irregular piece to the hash string */
-	p->dest = pos;
-	p->len = r;
-	put_full(q, p);
+	if (r) {
+		p->dest = pos;
+		p->len = r;
+		put_full(q, p);
+	} else
+		put_free(q, p, 0);
 
 #ifndef NO_HASH_CHECK
 	counter += r;

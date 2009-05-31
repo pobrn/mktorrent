@@ -103,19 +103,21 @@ EXPORT unsigned char *make_hash(metafile_t *m)
 				exit(EXIT_FAILURE);
 			}
 
-			r += d;
-
-			if (r < m->piece_length)
+			if (d == 0) /* end of file */
 				break;
 
-			SHA1_Init(&c);
-			SHA1_Update(&c, read_buf, m->piece_length);
-			SHA1_Final(pos, &c);
-			pos += SHA_DIGEST_LENGTH;
+			r += d;
+
+			if (r == m->piece_length) {
+				SHA1_Init(&c);
+				SHA1_Update(&c, read_buf, m->piece_length);
+				SHA1_Final(pos, &c);
+				pos += SHA_DIGEST_LENGTH;
 #ifndef NO_HASH_CHECK
-			counter += r;	/* r == piece_length */
+				counter += r;	/* r == piece_length */
 #endif
-			r = 0;
+				r = 0;
+			}
 		}
 
 		/* now close the file */
@@ -127,9 +129,11 @@ EXPORT unsigned char *make_hash(metafile_t *m)
 	}
 
 	/* finally append the hash of the last irregular piece to the hash string */
-	SHA1_Init(&c);
-	SHA1_Update(&c, read_buf, r);
-	SHA1_Final(pos, &c);
+	if (r) {
+		SHA1_Init(&c);
+		SHA1_Update(&c, read_buf, r);
+		SHA1_Final(pos, &c);
+	}
 
 #ifndef NO_HASH_CHECK
 	counter += r;
