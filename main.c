@@ -51,8 +51,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 #include "mktorrent.h"
 
-/* global variables */
-
 #ifdef ALLINONE
 #include "ftw.c"
 #include "init.c"
@@ -68,7 +66,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #endif
 
 #include "output.c"
-#else
+#else /* ALLINONE */
 /* init.c */
 extern void init(metafile_t *m, int argc, char *argv[]);
 /* hash.c */
@@ -161,7 +159,7 @@ int main(int argc, char *argv[])
 	/* print who we are */
 	printf("mktorrent " VERSION " (c) 2007, 2009 Emil Renner Berthing\n\n");
 
-	/* process options and initiate global variables */
+	/* process options */
 	init(&m, argc, argv);
 
 	/* open the file stream now, so we don't have to abort

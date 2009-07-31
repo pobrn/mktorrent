@@ -204,7 +204,7 @@ static int is_dir(metafile_t *m, char *target)
 	m->file_list->path = target;
 	m->file_list->size = s.st_size;
 	m->file_list->next = NULL;
-	/* ..and size global variables */
+	/* ..and size variable */
 	m->size = s.st_size;
 
 	/* now return 0 since it isn't a directory */
