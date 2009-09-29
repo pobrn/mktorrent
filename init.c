@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <string.h>       /* strerror() */
 #include <stdio.h>        /* printf() etc. */
 #include <sys/stat.h>     /* the stat structure */
-#include <unistd.h>       /* getopt(), getcwd() */
+#include <unistd.h>       /* getopt(), getcwd(), sysconf() */
 #include <string.h>       /* strcmp(), strlen(), strncpy() */
 #ifdef USE_LONG_OPTIONS
 #include <getopt.h>       /* getopt_long() */
@@ -291,7 +291,7 @@ static void print_help()
 	  "-p, --private                 : set the private flag\n"
 #ifdef USE_PTHREADS
 	  "-t, --threads=<n>             : use <n> threads for calculating hashes\n"
-	  "                                default is 2\n"
+	  "                                default is the number of CPU cores\n"
 #endif
 	  "-v, --verbose                 : be verbose\n"
 	  "-w, --web-seed=<url>[,<url>]* : add web seed URLs\n"
@@ -312,7 +312,7 @@ static void print_help()
 	  "-p                : set the private flag\n"
 #ifdef USE_PTHREADS
 	  "-t <n>            : use <n> threads for calculating hashes\n"
-	  "                    default is 2\n"
+	  "                    default is the number of CPU cores\n"
 #endif
 	  "-v                : be verbose\n"
 	  "-w <url>[,<url>]* : add web seed URLs\n"
@@ -368,8 +368,15 @@ static void dump_options(metafile_t *m)
 	printf("  Torrent name: %s\n"
 	       "  Metafile:     %s\n"
 	       "  Piece length: %u\n"
+#ifdef USE_PTHREADS
+	       "  Threads:      %u\n"
+#endif
 	       "  Be verbose:   yes\n",
-	       m->torrent_name, m->metainfo_file_path, m->piece_length);
+	       m->torrent_name, m->metainfo_file_path, m->piece_length
+#ifdef USE_PTHREADS
+	       ,m->threads
+#endif
+	       );
 
 	printf("  Write date:   ");
 	if (m->no_creation_date)
@@ -521,10 +528,18 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 
 #ifdef USE_PTHREADS
 	/* check the number of threads */
-	if (m->threads < 1 || m->threads > 20) {
-		fprintf(stderr, "The number of threads must be a number"
-				"between 1 and 20\n");
-		exit(EXIT_FAILURE);
+	if (m->threads) {
+		if (m->threads > 20) {
+			fprintf(stderr, "The number of threads is limited to "
+			                "at most 20\n");
+			exit(EXIT_FAILURE);
+		}
+	} else {
+#ifdef _SC_NPROCESSORS_ONLN
+		m->threads = sysconf(_SC_NPROCESSORS_ONLN);
+		if (m->threads == -1)
+#endif
+			m->threads = 2; /* some sane default */
 	}
 #endif
 

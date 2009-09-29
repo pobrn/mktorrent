@@ -27,7 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 #ifdef ALLINONE
 #include <sys/stat.h>
-#include <unistd.h>      /* access(), read(), close(), getcwd() */
+#include <unistd.h>      /* access(), read(), close(), getcwd(), sysconf() */
 #ifdef USE_LONG_OPTIONS
 #include <getopt.h>      /* getopt_long() */
 #endif
@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
 		0,    /* private */
 		0,    /* verbose */
 #ifdef USE_PTHREADS
-		2,    /* threads */
+		0,    /* threads, initialised by init() */
 #endif
 
 		/* information calculated by read_dir() */
