@@ -39,7 +39,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <inttypes.h>
 #endif
 #ifdef USE_PTHREADS
-#include <alloca.h>      /* alloca() */
 #include <pthread.h>     /* pthread functions and data structures */
 #endif
 
