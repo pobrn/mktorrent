@@ -301,8 +301,10 @@ EXPORT unsigned char *make_hash(metafile_t *m)
 
 	workers = malloc(m->threads * sizeof(pthread_t));
 	hash_string = malloc(m->pieces * SHA_DIGEST_LENGTH);
-	if (workers == NULL || hash_string == NULL)
-		return NULL;
+	if (workers == NULL || hash_string == NULL) {
+		fprintf(stderr, "Out of memory.\n");
+		exit(EXIT_FAILURE);
+	}
 
 	q.pieces = m->pieces;
 	q.buffers_max = 3*m->threads;
