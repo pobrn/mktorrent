@@ -46,6 +46,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #define O_BINARY 0
 #endif
 
+#if defined _LARGEFILE_SOURCE && defined O_LARGEFILE
+#define OPENFLAGS (O_RDONLY | O_BINARY | O_LARGEFILE)
+#else
+#define OPENFLAGS (O_RDONLY | O_BINARY)
+#endif
+
 struct piece_s;
 typedef struct piece_s piece_t;
 struct piece_s {
@@ -204,14 +210,13 @@ static void *worker(void *data)
 
 static void read_files(metafile_t *m, queue_t *q, unsigned char *pos)
 {
-	int fd;                         /* file descriptor */
-	flist_t *f;                     /* pointer to a place in the file
-	                                   list */
-	ssize_t r = 0;                  /* number of bytes read from
-	                                   file(s) into the read buffer */
+	int fd;              /* file descriptor */
+	flist_t *f;          /* pointer to a place in the file list */
+	ssize_t r = 0;       /* number of bytes read from file(s)
+	                        into the read buffer */
 #ifndef NO_HASH_CHECK
-	off_t counter = 0;              /* number of bytes hashed
-	                                   should match size when done */
+	off_t counter = 0;   /* number of bytes hashed
+	                        should match size when done */
 #endif
 	piece_t *p = get_free(q, m->piece_length);
 
@@ -219,11 +224,7 @@ static void read_files(metafile_t *m, queue_t *q, unsigned char *pos)
 	for (f = m->file_list; f; f = f->next) {
 
 		/* open the current file for reading */
-#if defined _LARGEFILE_SOURCE && defined O_LARGEFILE
-		if ((fd = open(f->path, O_RDONLY | O_BINARY | O_LARGEFILE)) == -1) {
-#else
-		if ((fd = open(f->path, O_RDONLY | O_BINARY)) == -1) {
-#endif
+		if ((fd = open(f->path, OPENFLAGS)) == -1) {
 			fprintf(stderr, "Error opening '%s' for reading: %s\n",
 					f->path, strerror(errno));
 			exit(EXIT_FAILURE);
