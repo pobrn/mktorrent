@@ -17,25 +17,26 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
 #ifndef ALLINONE
-#include <stdlib.h>       /* exit() */
-#include <sys/types.h>    /* off_t */
-#include <errno.h>        /* errno */
-#include <string.h>       /* strerror() */
-#include <stdio.h>        /* printf() etc. */
-#include <fcntl.h>        /* open() */
-#include <unistd.h>       /* read(), close() */
+#include <stdlib.h>       /* malloc(), free() */
+#include <sys/types.h>    /* off_t            */
+#include <errno.h>        /* errno            */
+#include <string.h>       /* strerror()       */
+#include <stdio.h>        /* printf() etc.    */
+#include <fcntl.h>        /* open()           */
+#include <unistd.h>       /* read(), close()  */
 
 #ifdef USE_OPENSSL
-#include <openssl/sha.h>  /* SHA1() */
+#include <openssl/sha.h>
 #else
 #include <inttypes.h>
 #include "sha1.h"
 #endif
 
-#include "mktorrent.h"
-
 #define EXPORT
 #endif /* ALLINONE */
+
+#include "benc.h"
+#include "fiter.h"
 
 #ifndef O_BINARY
 #define O_BINARY 0
@@ -47,66 +48,113 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #define OPENFLAGS (O_RDONLY | O_BINARY)
 #endif
 
-/*
- * go through the files in file_list, split their contents into pieces
- * of size piece_length and create the hash string, which is the
- * concatenation of the (20 byte) SHA1 hash of every piece
- * last piece may be shorter
- */
-EXPORT unsigned char *make_hash(metafile_t *m)
+static unsigned int
+get_info(union be_t *meta, off_t *size, unsigned int *piece_length)
 {
-	flist_t *f;                     /* pointer to a place in the file list */
-	unsigned char *hash_string;     /* the hash string */
-	unsigned char *pos;             /* position in the hash string */
-	unsigned char *read_buf;        /* read buffer */
-	int fd;                         /* file descriptor */
-	ssize_t r;                      /* number of bytes read from file(s) into
-	                                   the read buffer */
-	SHA_CTX c;                      /* SHA1 hashing context */
-#ifndef NO_HASH_CHECK
-	off_t counter = 0;              /* number of bytes hashed
-	                                   should match size when done */
-#endif
+	union be_t *info = be_dict_get(meta, "info");
+	union be_t *files;
+	struct be_list_node *n;
+	off_t total = 0;
 
-	/* allocate memory for the hash string
-	   every SHA1 hash is SHA_DIGEST_LENGTH (20) bytes long */
-	hash_string = malloc(m->pieces * SHA_DIGEST_LENGTH);
-	/* allocate memory for the read buffer to store 1 piece */
-	read_buf = malloc(m->piece_length);
-
-	/* check if we've run out of memory */
-	if (hash_string == NULL || read_buf == NULL) {
-		fprintf(stderr, "Out of memory.\n");
-		exit(EXIT_FAILURE);
+	if (info == NULL || info->type != BE_TYPE_DICT) {
+		fprintf(stderr, "No info section found\n");
+		return 1;
 	}
 
-	/* initiate pos to point to the beginning of hash_string */
-	pos = hash_string;
-	/* and initiate r to 0 since we haven't read anything yet */
-	r = 0;
-	/* go through all the files in the file list */
-	for (f = m->file_list; f; f = f->next) {
+	files = be_dict_get(info, "piece length");
+	if (files == NULL || files->type != BE_TYPE_OFF_T) {
+		fprintf(stderr, "No piece length found\n");
+		return 1;
+	}
+	*piece_length = files->off.n;
 
-		/* open the current file for reading */
-		if ((fd = open(f->path, OPENFLAGS)) == -1) {
-			fprintf(stderr, "Error opening '%s' for reading: %s\n",
-					f->path, strerror(errno));
-			exit(EXIT_FAILURE);
+	files = be_dict_get(info, "files");
+	if (files == NULL || files->type != BE_TYPE_LIST) {
+		union be_t *length = be_dict_get(info, "length");
+
+		if (length == NULL || length->type != BE_TYPE_OFF_T) {
+			fprintf(stderr, "No length specified\n");
+			return 1;
 		}
-		printf("Hashing %s.\n", f->path);
-		fflush(stdout);
 
-		/* fill the read buffer with the contents of the file and append
-		   the SHA1 hash of it to the hash string when the buffer is full.
-		   repeat until we can't fill the read buffer and we've thus come
-		   to the end of the file */
+		*size = length->off.n;
+		return 0;
+	}
+
+	for (n = files->list.first; n; n = n->next) {
+		union be_t *length = be_dict_get(n->v, "length");
+
+		if (length == NULL || length->type != BE_TYPE_OFF_T) {
+			fprintf(stderr, "Found file with no length specified\n");
+			return 1;
+		}
+
+		total += length->off.n;
+	}
+
+	*size = total;
+	return 0;
+}
+
+EXPORT union be_t *
+make_hash(union be_t *meta, unsigned int verbosity)
+{
+	struct fiter it;
+	const char *file;
+	union be_t *hash_string;
+	unsigned char *pos;
+	unsigned char *read_buf;
+	int fd;
+	ssize_t r;
+	SHA_CTX c;
+#ifndef NO_HASH_CHECK
+	off_t counter = 0;
+#endif
+	off_t size;
+	unsigned int piece_length;
+	unsigned int pieces;
+
+	if (get_info(meta, &size, &piece_length))
+		return NULL;
+
+	/* calculate the number of pieces
+	   pieces = ceil( size / piece_length ) */
+	pieces = (size + piece_length - 1) / piece_length;
+
+	hash_string = be_string_new(pieces * SHA_DIGEST_LENGTH);
+	if (hash_string == NULL) {
+		fprintf(stderr, "Out of memory.\n");
+		return NULL;
+	}
+
+	read_buf = malloc(piece_length);
+	if (read_buf == NULL) {
+		be_destroy(hash_string);
+		fprintf(stderr, "Out of memory.\n");
+		return NULL;
+	}
+
+	pos = (unsigned char *)be_string_get(&hash_string->string);
+	r = 0;
+	for (file = fiter_first(&it, meta); file; file = fiter_next(&it)) {
+		if ((fd = open(file, OPENFLAGS)) == -1) {
+			fprintf(stderr, "Error opening '%s' for reading: %s\n",
+					file, strerror(errno));
+			goto error;
+		}
+
+		if (verbosity > 0) {
+			printf("Hashing %s.\n", file);
+			fflush(stdout);
+		}
+
 		while (1) {
-			ssize_t d = read(fd, read_buf + r, m->piece_length - r);
+			ssize_t d = read(fd, read_buf + r, piece_length - r);
 
 			if (d < 0) {
 				fprintf(stderr, "Error reading from '%s': %s\n",
-						f->path, strerror(errno));
-				exit(EXIT_FAILURE);
+						file, strerror(errno));
+				goto error;
 			}
 
 			if (d == 0) /* end of file */
@@ -114,9 +162,9 @@ EXPORT unsigned char *make_hash(metafile_t *m)
 
 			r += d;
 
-			if (r == m->piece_length) {
+			if (r == piece_length) {
 				SHA1_Init(&c);
-				SHA1_Update(&c, read_buf, m->piece_length);
+				SHA1_Update(&c, read_buf, piece_length);
 				SHA1_Final(pos, &c);
 				pos += SHA_DIGEST_LENGTH;
 #ifndef NO_HASH_CHECK
@@ -129,10 +177,11 @@ EXPORT unsigned char *make_hash(metafile_t *m)
 		/* now close the file */
 		if (close(fd)) {
 			fprintf(stderr, "Error closing '%s': %s\n",
-					f->path, strerror(errno));
-			exit(EXIT_FAILURE);
+					file, strerror(errno));
+			goto error;
 		}
 	}
+
 
 	/* finally append the hash of the last irregular piece to the hash string */
 	if (r) {
@@ -143,11 +192,11 @@ EXPORT unsigned char *make_hash(metafile_t *m)
 
 #ifndef NO_HASH_CHECK
 	counter += r;
-	if (counter != m->size) {
+	if (counter != size) {
 		fprintf(stderr, "Counted %" PRIoff " bytes, "
 				"but hashed %" PRIoff " bytes. "
-				"Something is wrong...\n", m->size, counter);
-		exit(EXIT_FAILURE);
+				"Something is wrong...\n", size, counter);
+		goto error;
 	}
 #endif
 
@@ -155,4 +204,9 @@ EXPORT unsigned char *make_hash(metafile_t *m)
 	free(read_buf);
 
 	return hash_string;
+
+error:
+	be_destroy(hash_string);
+	free(read_buf);
+	return NULL;
 }

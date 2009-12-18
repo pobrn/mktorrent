@@ -63,7 +63,7 @@
 #-------------Nothing interesting below this line-----------------------------
 
 program = mktorrent
-version = 1.0
+version = 1.5
 
-HEADERS  = mktorrent.h
-SRCS     = ftw.c init.c sha1.c hash.c output.c main.c
+HEADERS  = ftw.h sha1.h benc.h fiter.h parse.h
+SRCS     = ftw.c sha1.c benc.c fiter.c parse.c hash.c mktorrent.c

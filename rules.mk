@@ -24,7 +24,7 @@ $(program): $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o $(program) $(LDFLAGS) $(LIBS)
 
 allinone: $(SRCS) $(HEADERS) prefix
-	$(CC) $(CFLAGS) $(DEFINES) -DPRIoff="\"`./prefix`d\"" -DVERSION="\"$(version)\"" -DALLINONE main.c -o $(program) $(LDFLAGS) $(LIBS)
+	$(CC) $(CFLAGS) $(DEFINES) -DPRIoff="\"`./prefix`d\"" -DVERSION="\"$(version)\"" -DALLINONE mktorrent.c -o $(program) $(LDFLAGS) $(LIBS)
 
 strip:
 	strip $(program)
