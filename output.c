@@ -119,15 +119,18 @@ EXPORT void write_metainfo(FILE *f, metafile_t *m, unsigned char *hash_string)
 	printf("Writing metainfo file... ");
 	fflush(stdout);
 
-	/* every metainfo file is one big dictonary
-	   and the first entry is the announce URL */
-	fprintf(f, "d8:announce%lu:%s",
-		(unsigned long)strlen(m->announce_list->l->s),
-		m->announce_list->l->s);
-	/* write the announce-list entry if we have
-	   more than one announce URL */
-	if (m->announce_list->next || m->announce_list->l->next)
-		write_announce_list(f, m->announce_list);
+	if (m->announce_list != NULL) 
+	{
+		/* every metainfo file is one big dictonary
+		   and the first entry is the announce URL */
+		fprintf(f, "d8:announce%lu:%s",
+			(unsigned long)strlen(m->announce_list->l->s),
+			m->announce_list->l->s);
+		/* write the announce-list entry if we have
+		   more than one announce URL */
+		if (m->announce_list->next || m->announce_list->l->next)
+			write_announce_list(f, m->announce_list);
+	}
 	/* add the comment if one is specified */
 	if (m->comment != NULL)
 		fprintf(f, "7:comment%lu:%s",
