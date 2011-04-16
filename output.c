@@ -121,7 +121,7 @@ EXPORT void write_metainfo(FILE *f, metafile_t *m, unsigned char *hash_string)
 
 	/* A torrent file should start with a d, no matter what. */
 	fprintf(f, "d");
-	
+
 	if (m->announce_list != NULL) {
 		/* every metainfo file is one big dictonary
 		   and the first entry is the announce URL */
