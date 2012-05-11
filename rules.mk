@@ -24,7 +24,14 @@ $(program): $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o $(program) $(LDFLAGS) $(LIBS)
 
 allinone: $(SRCS) $(HEADERS) prefix
-	$(CC) $(CFLAGS) $(DEFINES) -DPRIoff="\"`./prefix`d\"" -DVERSION="\"$(version)\"" -DALLINONE main.c -o $(program) $(LDFLAGS) $(LIBS)
+	$(CC) $(CFLAGS) $(DEFINES) -DPRIoff="\"`./prefix`d\"" -DVERSION="\"$(version)\"" -DALLINONE main.c -o $(program).o $(LDFLAGS) $(LIBS)
+
+aslib: $(SRCS) $(HEADERS) prefix
+	$(CC) $(CFLAGS) $(DEFINES) -DPRIoff="\"`./prefix`d\"" -DVERSION="\"$(version)\"" -DALLINONE libmktorrent.c -o $(program).o $(LDFLAGS) $(LIBS)
+	mkdir dist
+	cp libmktorrent.h dist/libmktorrent.h
+	ar rc dist/lib$(program).a $(program).o prefix
+	ranlib dist/lib$(program).a
 
 strip:
 	strip $(program)
@@ -33,7 +40,8 @@ indent:
 	indent -kr -i8 *.c *.h
 
 clean:
-	rm -f $(program) prefix *.o *.c~ *.h~
+	rm -f $(program) prefix *a *.o *.c~ *.h~
+	rm -rf dist
 
 install: $(program)
 	$(INSTALL) -d $(DESTDIR)$(PREFIX)/bin
