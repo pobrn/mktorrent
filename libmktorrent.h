@@ -56,7 +56,5 @@ typedef struct {
 	unsigned int pieces;       /* number of pieces */
 } metafile_t;
 
-void init(metafile_t *m, int argc, char *argv[]);
-
 
 #endif /* _MKTORRENT_H */
