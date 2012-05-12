@@ -57,4 +57,9 @@ typedef struct {
 } metafile_t;
 
 
+metafile_t *getDefaultMetaStruc();
+
+int mktorrent(char *, char*, metafile_t *);
+
+
 #endif /* _MKTORRENT_H */

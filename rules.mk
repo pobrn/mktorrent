@@ -27,7 +27,7 @@ allinone: $(SRCS) $(HEADERS) prefix
 	$(CC) $(CFLAGS) $(DEFINES) -DPRIoff="\"`./prefix`d\"" -DVERSION="\"$(version)\"" -DALLINONE main.c -o $(program).o $(LDFLAGS) $(LIBS)
 
 aslib: $(SRCS) $(HEADERS) prefix
-	$(CC) $(CFLAGS) $(DEFINES) -DPRIoff="\"`./prefix`d\"" -DVERSION="\"$(version)\"" -DALLINONE libmktorrent.c -o $(program).o $(LDFLAGS) $(LIBS)
+	$(CC) -c $(CFLAGS) $(DEFINES) -DPRIoff="\"`./prefix`d\"" -DVERSION="\"$(version)\"" -DALLINONE -DSILENT libmktorrent.c -o $(program).o $(LDFLAGS) $(LIBS)
 	mkdir dist
 	cp libmktorrent.h dist/libmktorrent.h
 	ar rc dist/lib$(program).a $(program).o prefix

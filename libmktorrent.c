@@ -128,8 +128,156 @@ static void close_file(FILE *f)
 	}
 }
 
-int main(int argc, char *argv[])
-{ 	return EXIT_SUCCESS;
+metafile_t *getDefaultMetaStruc(){
+ 	static metafile_t m = {
+ 		/* options */
+ 		18,   /* piece_length, 2^18 = 256kb by default */
+ 		NULL, /* announce_list */
+ 		NULL, /* torrent_name */
+ 		NULL, /* metainfo_file_path */
+ 		NULL, /* web_seed_url */
+ 		NULL, /* comment */
+ 		0,    /* target_is_directory  */
+ 		0,    /* no_creation_date */
+ 		0,    /* private */
+ 		0,    /* verbose */
+ #ifdef USE_PTHREADS
+ 		0,    /* threads, initialised by init() */
+ #endif
+ 		/* information calculated by read_dir() */
+ 		0,    /* size */
+ 		NULL, /* file_list */
+ 		0     /* pieces */
+ 	};
+	return &m;
+}
 
-};
+
+/*
+ * a reimplementation of init.
+ * this version does not pare the command line, 
+ * it takes &m as given input.
+ */
+int initLib(metafile_t *m, char *annouceUrl, char *fileOrDirName)
+{
+	llist_t *announce_last = NULL;
+	slist_t *web_seed_last = NULL;
+
+	if (announce_last == NULL) {
+		m->announce_list = announce_last = malloc(sizeof(llist_t));
+	} else {
+		announce_last->next = malloc(sizeof(llist_t));
+		announce_last = announce_last->next;
+	}
+	if (announce_last == NULL) {
+		fprintf(stderr, "Out of memory.\n");
+		return EXIT_FAILURE;
+	}
+	announce_last->l = get_slist(annouceUrl);
+
+	/* set the correct piece length.
+	   default is 2^18 = 256kb. */
+	if (m->piece_length < 15 || m->piece_length > 28) {
+		fprintf(stderr,
+			"The piece length must be a number between "
+			"15 and 28.\n");
+		return EXIT_FAILURE;
+	}
+	m->piece_length = 1 << m->piece_length;
+
+	/* user must specify at least one announce URL as it wouldn't make
+	 * any sense to have a default for this.
+	 * it is ok not to have any unless torrent is private. */
+	if (m->announce_list == NULL && m->private == 1) {
+		fprintf(stderr, "Must specify an announce URL.\n");
+		return EXIT_FAILURE;
+	}
+	if (announce_last != NULL){
+		announce_last->next = NULL;
+	}
+
+#ifdef USE_PTHREADS
+	/* check the number of threads */
+	if (m->threads) {
+		if (m->threads > 20) {
+			fprintf(stderr, "The number of threads is limited to "
+			                "at most 20\n");
+			return EXIT_FAILURE;
+		}
+	} else {
+#ifdef _SC_NPROCESSORS_ONLN
+		m->threads = sysconf(_SC_NPROCESSORS_ONLN);
+		if (m->threads == -1)
+#endif
+			m->threads = 2; /* some sane default */
+	}
+#endif
+
+	/* strip ending DIRSEP's from target */
+	strip_ending_dirseps(fileOrDirName);
+
+	/* if the torrent name isn't set use the basename of the target */
+	if (m->torrent_name == NULL){
+		m->torrent_name = basename(fileOrDirName);
+	}
+
+	/* make sure m->metainfo_file_path is the absolute path to the file */
+	set_absolute_file_path(m);
+
+	/* if we should be verbose print out all the options
+	   as we have set them */
+	if (m->verbose){
+		dump_options(m);
+	}
+
+	/* check if target is a directory or just a single file */
+	m->target_is_directory = is_dir(m, fileOrDirName);
+	if (m->target_is_directory) {
+		/* change to the specified directory */
+		if (chdir(fileOrDirName)) {
+			fprintf(stderr, "Error changing directory to '%s': %s\n",
+					fileOrDirName, strerror(errno));
+			return EXIT_FAILURE;
+		}
+
+		if (file_tree_walk("." DIRSEP, MAX_OPENFD, process_node, m)){
+			return EXIT_FAILURE;
+		}
+	}
+
+	/* calculate the number of pieces
+	   pieces = ceil( size / piece_length ) */
+	m->pieces = (m->size + m->piece_length - 1) / m->piece_length;
+
+	/* now print the size and piece count if we should be verbose */
+	if (m->verbose) {
+		printf("\n%" PRIoff " bytes in all.\n"
+			"That's %u pieces of %u bytes each.\n\n",
+			m->size, m->pieces, m->piece_length);
+	}
+	return EXIT_SUCCESS;
+}
+
+int mktorrent(char *fileOrDirName, char* annouceUrl, metafile_t *m){
+	FILE *file;	/* stream for writing to the metainfo file */
+
+ 	/* process options */
+ 	int status = initLib(m, annouceUrl, fileOrDirName);
+ 	if(status == EXIT_FAILURE){
+		return status;
+	}
+
+ 	/* open the file stream now, so we don't have to abort
+ 	   _after_ we did all the hashing in case we fail */
+ 	file = open_file(m->metainfo_file_path);
+
+ 	/* calculate hash string and write the metainfo to file */
+ 	write_metainfo(file, m, make_hash(m));
+
+ 	/* close the file stream */
+ 	close_file(file);
+
+	return EXIT_SUCCESS;
+}
+
 
