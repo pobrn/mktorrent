@@ -520,6 +520,14 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 	}
 	m->piece_length = 1 << m->piece_length;
 
+	/* user must specify at least one announce URL as it wouldn't make
+	 * any sense to have a default for this.
+	 * it is ok not to have any unless torrent is private. */
+	if (m->announce_list == NULL && m->private == 1) {
+		fprintf(stderr, "Must specify an announce URL. "
+			"Use -h for help.\n");
+		exit(EXIT_FAILURE);
+	}
 	if (announce_last != NULL)
 		announce_last->next = NULL;
 
