@@ -45,6 +45,7 @@ typedef struct {
 	int target_is_directory;   /* target is a directory */
 	int no_creation_date;      /* don't write the creation date */
 	int private;               /* set the private flag */
+	char *source;              /* set source for private trackers */
 	int verbose;               /* be verbose */
 #ifdef USE_PTHREADS
 	unsigned int threads;      /* number of threads used for hashing */

@@ -166,6 +166,9 @@ EXPORT void write_metainfo(FILE *f, metafile_t *m, unsigned char *hash_string)
 	if (m->private)
 		fprintf(f, "7:privatei1e");
 
+	if (m->source)
+		fprintf(f, "6:source%lu:%s", (unsigned long)strlen(m->source), m->source);
+
 	/* end the info section */
 	fprintf(f, "e");
 
