@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <stdio.h>       /* printf() etc. */
 #include <sys/stat.h>    /* S_IRUSR, S_IWUSR, S_IRGRP, S_IROTH */
 #include <fcntl.h>       /* open() */
+#include <stdbool.h>     /* bool: true / false */
 
 #ifdef ALLINONE
 #include <sys/stat.h>
@@ -71,7 +72,7 @@ extern void init(metafile_t *m, int argc, char *argv[]);
 /* hash.c */
 extern unsigned char *make_hash(metafile_t *m);
 /* output.c */
-extern void write_metainfo(FILE *f, metafile_t *m, unsigned char *hash_string);
+extern void write_metainfo(FILE *f, metafile_t *m, unsigned char *hash_string, bool fast);
 #endif /* ALLINONE */
 
 #ifndef O_BINARY
@@ -85,14 +86,107 @@ extern void write_metainfo(FILE *f, metafile_t *m, unsigned char *hash_string);
 #define S_IROTH 0
 #endif
 
+/* Checks if string str ends with string suffix */
+int EndsWith(const char *str, const char *suffix)
+{
+    if (!str || !suffix)
+        return 0;
+    size_t lenstr = strlen(str);
+    size_t lensuffix = strlen(suffix);
+    if (lensuffix >  lenstr)
+        return 0;
+    return strncmp(str + lenstr - lensuffix, suffix, lensuffix) == 0;
+}
+
+char* concat(char *s1, char *s2)
+{
+    char *result = malloc(strlen(s1)+strlen(s2)+1);//+1 for the zero-terminator
+    //in real code you would check for errors in malloc here
+    strcpy(result, s1);
+    strcat(result, s2);
+    return result;
+}
+
+
+/* This is suppose to be faster somehow */
+/*char* concat(char *s1, char *s2)
+{
+    size_t len1 = strlen(s1);
+    size_t len2 = strlen(s2);
+    char *result = malloc(len1+len2+1);//+1 for the zero-terminator
+    //in real code you would check for errors in malloc here
+    memcpy(result, s1, len1);
+    memcpy(result+len1, s2, len2+1);//+1 to copy the null-terminator
+    return result;
+}*/
+
+/*char *str_replace(char *orig, char *rep, char *with) {
+    char *result; // the return string
+    char *ins;    // the next insert point
+    char *tmp;    // varies
+    int len_rep;  // length of rep
+    int len_with; // length of with
+    int len_front; // distance between rep and end of last rep
+    int count;    // number of replacements
+
+    if (!orig)
+        return NULL;
+    if (!rep)
+        rep = "";
+    len_rep = strlen(rep);
+    if (!with)
+        with = "";
+    len_with = strlen(with);
+
+    ins = orig;
+    for (count = 0; tmp = strstr(ins, rep); ++count) {
+        ins = tmp + len_rep;
+    }
+
+    // first time through the loop, all the variable are set correctly
+    // from here on,
+    //    tmp points to the end of the result string
+    //    ins points to the next occurrence of rep in orig
+    //    orig points to the remainder of orig after "end of rep"
+    tmp = result = malloc(strlen(orig) + (len_with - len_rep) * count + 1);
+
+    if (!result)
+        return NULL;
+
+    while (count--) {
+        ins = strstr(orig, rep);
+        len_front = ins - orig;
+        tmp = strncpy(tmp, orig, len_front) + len_front;
+        tmp = strcpy(tmp, with) + len_with;
+        orig += len_front + len_rep; // move to next "end of rep"
+    }
+    strcpy(tmp, orig);
+    return result;
+}*/
+
 /*
  * create and open the metainfo file for writing and create a stream for it
  * we don't want to overwrite anything, so abort if the file is already there
  */
-static FILE *open_file(const char *path)
+static FILE *open_file(char *path)
 {
 	int fd;  /* file descriptor */
 	FILE *f; /* file stream */
+
+	/*if (fast == true) {
+		if (strlen(path) >= 8) {
+			char *tail;
+			substr(tail, strlen(path)+1, path, -8);
+			if (strcmp(tail, ".torrent") == 0) {
+				path = str_replace(path, ".torrent", "");
+				path = concat(path, "-fast.torrent");
+			}
+		} else {
+			path = concat(path, "-fast");
+		}
+	}
+
+	printf("\n\n Path: %s \n\n", path);*/
 
 	/* open and create the file if it doesn't exist already */
 	fd = open(path, O_WRONLY | O_BINARY | O_CREAT | O_EXCL,
@@ -112,6 +206,19 @@ static FILE *open_file(const char *path)
 	}
 
 	return f;
+}
+
+char* get_path_name(char *path, bool fast) {
+	if (EndsWith(path, ".torrent")) {
+		//path = str_replace(path, ".torrent", "");
+		path[strlen(path)-8] = '\0';
+	} 
+
+	if (fast == true) {
+		return concat(path, "-fast.torrent");
+	} else {
+		return concat(path, ".torrent");
+	}
 }
 
 /*
@@ -139,6 +246,7 @@ int main(int argc, char *argv[])
 		NULL, /* announce_list */
 		NULL, /* torrent_name */
 		NULL, /* metainfo_file_path */
+		false,/* libtorrent fast resume */
 		NULL, /* web_seed_url */
 		NULL, /* comment */
 		0,    /* target_is_directory  */
@@ -164,13 +272,24 @@ int main(int argc, char *argv[])
 
 	/* open the file stream now, so we don't have to abort
 	   _after_ we did all the hashing in case we fail */
-	file = open_file(m.metainfo_file_path);
+	file = open_file(get_path_name(m.metainfo_file_path, false));
 
-	/* calculate hash string and write the metainfo to file */
-	write_metainfo(file, &m, make_hash(&m));
+	/* calculate hash string from metadata*/
+	unsigned char* info_hash = make_hash(&m);
+
+	/* write the metainfo to file */
+	write_metainfo(file, &m, info_hash, false);
 
 	/* close the file stream */
 	close_file(file);
+
+	if (m.fast_resume) {
+		file = open_file(get_path_name(m.metainfo_file_path, true));
+
+		write_metainfo(file, &m, info_hash, true);
+
+		close_file(file);
+	}
 
 	/* yeih! everything seemed to go as planned */
 	return EXIT_SUCCESS;

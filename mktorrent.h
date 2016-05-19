@@ -41,6 +41,7 @@ typedef struct {
 	char *comment;             /* optional comment */
 	const char *torrent_name;  /* name of torrent (name of directory) */
 	char *metainfo_file_path;  /* absolute path to the metainfo file */
+	_Bool fast_resume;          /* output seperate fast resume torrent */
 	slist_t *web_seed_list;    /* web seed URLs */
 	int target_is_directory;   /* target is a directory */
 	int no_creation_date;      /* don't write the creation date */

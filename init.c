@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <sys/stat.h>     /* the stat structure */
 #include <unistd.h>       /* getopt(), getcwd(), sysconf() */
 #include <string.h>       /* strcmp(), strlen(), strncpy() */
+#include <stdbool.h>      /* bool: true / false */
 #ifdef USE_LONG_OPTIONS
 #include <getopt.h>       /* getopt_long() */
 #endif
@@ -290,6 +291,7 @@ static void print_help()
 	  "                                default is <name>.torrent\n"
 	  "-p, --private                 : set the private flag\n"
 	  "-s, --source                  : add source string embedded in infohash\n"
+	  "-f, --fast                    : create seperate fast resume torrent for libtorrent\n"
 #ifdef USE_PTHREADS
 	  "-t, --threads=<n>             : use <n> threads for calculating hashes\n"
 	  "                                default is the number of CPU cores\n"
@@ -312,6 +314,8 @@ static void print_help()
 	  "                    default is <name>.torrent\n"
 	  "-p                : set the private flag\n"
 	  "-s                : add source string embedded in infohash\n"
+	  "-f                : create seperate fast resume torrent for libtorrent\n"
+
 #ifdef USE_PTHREADS
 	  "-t <n>            : use <n> threads for calculating hashes\n"
 	  "                    default is the number of CPU cores\n"
@@ -421,6 +425,7 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 		{"output", 1, NULL, 'o'},
 		{"private", 0, NULL, 'p'},
 		{"source", 1, NULL, 's'},
+		{"fast", 1, NULL, 'f'},
 #ifdef USE_PTHREADS
 		{"threads", 1, NULL, 't'},
 #endif
@@ -432,9 +437,9 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 
 	/* now parse the command line options given */
 #ifdef USE_PTHREADS
-#define OPT_STRING "a:c:dhl:n:o:ps:t:vw:"
+#define OPT_STRING "a:c:dhl:n:o:pfs:t:vw:"
 #else
-#define OPT_STRING "a:c:dhl:n:o:ps:vw:"
+#define OPT_STRING "a:c:dhl:n:o:pfs:vw:"
 #endif
 #ifdef USE_LONG_OPTIONS
 	while ((c = getopt_long(argc, argv, OPT_STRING,
@@ -477,6 +482,9 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 			break;
 		case 'o':
 			m->metainfo_file_path = optarg;
+			break;
+		case 'f':
+			m->fast_resume = true;
 			break;
 		case 'p':
 			m->private = 1;
@@ -523,11 +531,11 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 	/* user must specify at least one announce URL as it wouldn't make
 	 * any sense to have a default for this.
 	 * it is ok not to have any unless torrent is private. */
-	if (m->announce_list == NULL && m->private == 1) {
+	/*if (m->announce_list == NULL && m->private == 1) {
 		fprintf(stderr, "Must specify an announce URL. "
 			"Use -h for help.\n");
 		exit(EXIT_FAILURE);
-	}
+	}*/
 	if (announce_last != NULL)
 		announce_last->next = NULL;
 
