@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <stdio.h>        /* printf() etc. */
 #include <string.h>       /* strlen() etc. */
 #include <time.h>         /* time() */
+#include <stdbool.h>      /* bool: true / false */
 #ifdef USE_OPENSSL
 #include <openssl/sha.h>  /* SHA_DIGEST_LENGTH */
 #else
@@ -113,7 +114,7 @@ static void write_web_seed_list(FILE *f, slist_t *list)
  * write metainfo to the file stream using all the information
  * we've gathered so far and the hash string calculated
  */
-EXPORT void write_metainfo(FILE *f, metafile_t *m, unsigned char *hash_string)
+EXPORT void write_metainfo(FILE *f, metafile_t *m, unsigned char *hash_string, bool fast)
 {
 	/* let the user know we've started writing the metainfo file */
 	printf("Writing metainfo file... ");
@@ -165,9 +166,19 @@ EXPORT void write_metainfo(FILE *f, metafile_t *m, unsigned char *hash_string)
 	/* set the private flag */
 	if (m->private)
 		fprintf(f, "7:privatei1e");
+	
+	/* write source info to file if present */
+	if (m->source)
+		fprintf(f, "6:source%lu:%s", (unsigned long)strlen(m->source), m->source);
 
 	/* end the info section */
 	fprintf(f, "e");
+
+	/* write fast libtorrent data */
+	if (fast) {
+		fprintf(f, "17:libtorrent_resumed8:bitfieldi%ie5:filesld9:completedi%ie5:mtimei%lde8:priorityi1eeee",
+			m->pieces, m->pieces, (long)time(NULL));
+	}
 
 	/* add url-list if one is specified */
 	if (m->web_seed_list != NULL) {
