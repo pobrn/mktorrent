@@ -319,7 +319,7 @@ static void print_help()
 	  "                    additional -w adds more URLs\n"
 #endif
 	  "\nPlease send bug reports, patches, feature requests, praise and\n"
-	  "general gossip about the program to: esmil@users.sourceforge.net\n");
+	  "general gossip about the program to: mktorrent@rudde.org\n");
 }
 
 /*
