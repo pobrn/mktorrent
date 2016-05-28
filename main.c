@@ -144,6 +144,7 @@ int main(int argc, char *argv[])
 		0,    /* target_is_directory  */
 		0,    /* no_creation_date */
 		0,    /* private */
+		NULL, /* source string */
 		0,    /* verbose */
 #ifdef USE_PTHREADS
 		0,    /* threads, initialised by init() */

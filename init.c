@@ -289,6 +289,7 @@ static void print_help()
 	  "-o, --output=<filename>       : set the path and filename of the created file\n"
 	  "                                default is <name>.torrent\n"
 	  "-p, --private                 : set the private flag\n"
+	  "-s, --source                  : add source string embedded in infohash\n"
 #ifdef USE_PTHREADS
 	  "-t, --threads=<n>             : use <n> threads for calculating hashes\n"
 	  "                                default is the number of CPU cores\n"
@@ -310,6 +311,7 @@ static void print_help()
 	  "-o <filename>     : set the path and filename of the created file\n"
 	  "                    default is <name>.torrent\n"
 	  "-p                : set the private flag\n"
+	  "-s                : add source string embedded in infohash\n"
 #ifdef USE_PTHREADS
 	  "-t <n>            : use <n> threads for calculating hashes\n"
 	  "                    default is the number of CPU cores\n"
@@ -319,7 +321,7 @@ static void print_help()
 	  "                    additional -w adds more URLs\n"
 #endif
 	  "\nPlease send bug reports, patches, feature requests, praise and\n"
-	  "general gossip about the program to: mktorrent@rudde.org\n");
+	  "general gossip about the program to: esmil@users.sourceforge.net\n");
 }
 
 /*
@@ -386,6 +388,10 @@ static void dump_options(metafile_t *m)
 
 	print_web_seed_list(m->web_seed_list);
 
+	/* Print source string only if set */
+	if (m->source)
+		printf("\n Source:      %s\n\n", m->source);
+
 	printf("  Comment:      ");
 	if (m->comment == NULL)
 		printf("none\n\n");
@@ -414,6 +420,7 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 		{"name", 1, NULL, 'n'},
 		{"output", 1, NULL, 'o'},
 		{"private", 0, NULL, 'p'},
+		{"source", 1, NULL, 's'},
 #ifdef USE_PTHREADS
 		{"threads", 1, NULL, 't'},
 #endif
@@ -425,9 +432,9 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 
 	/* now parse the command line options given */
 #ifdef USE_PTHREADS
-#define OPT_STRING "a:c:dhl:n:o:pt:vw:"
+#define OPT_STRING "a:c:dhl:n:o:ps:t:vw:"
 #else
-#define OPT_STRING "a:c:dhl:n:o:pvw:"
+#define OPT_STRING "a:c:dhl:n:o:ps:vw:"
 #endif
 #ifdef USE_LONG_OPTIONS
 	while ((c = getopt_long(argc, argv, OPT_STRING,
@@ -473,6 +480,9 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 			break;
 		case 'p':
 			m->private = 1;
+			break;
+		case 's':
+			m->source = optarg;
 			break;
 #ifdef USE_PTHREADS
 		case 't':
