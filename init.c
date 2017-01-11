@@ -289,7 +289,7 @@ static void print_help()
 	  "-o, --output=<filename>       : set the path and filename of the created file\n"
 	  "                                default is <name>.torrent\n"
 	  "-p, --private                 : set the private flag\n"
-	  "-s, --source                  : add source string embedded in infohash\n"
+	  "-s, --source=<source>         : add source string embedded in infohash\n"
 #ifdef USE_PTHREADS
 	  "-t, --threads=<n>             : use <n> threads for calculating hashes\n"
 	  "                                default is the number of CPU cores\n"
