@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <sys/stat.h>     /* the stat structure */
 #include <unistd.h>       /* getopt(), getcwd(), sysconf() */
 #include <string.h>       /* strcmp(), strlen(), strncpy() */
+#include <ctype.h>
 #ifdef USE_LONG_OPTIONS
 #include <getopt.h>       /* getopt_long() */
 #endif
@@ -35,6 +36,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #define EXPORT
 #endif /* ALLINONE */
 
+#define MAX_ANNOUNCE_FILE_SIZE (1024 * 16)
 #ifndef MAX_OPENFD
 #define MAX_OPENFD 100	/* Maximum number of file descriptors
 			   file_tree_walk() will open */
@@ -279,6 +281,7 @@ static void print_help()
 	  "-a, --announce=<url>[,<url>]* : specify the full announce URLs\n"
 	  "                                at least one is required\n"
 	  "                                additional -a adds backup trackers\n"
+	  "-A, --announce-file=<file>    : specify a file from which a full announce URL is read\n"
 	  "-c, --comment=<comment>       : add a comment to the metainfo\n"
 	  "-d, --no-date                 : don't write the creation date\n"
 	  "-h, --help                    : show this help screen\n"
@@ -301,6 +304,7 @@ static void print_help()
 	  "-a <url>[,<url>]* : specify the full announce URLs\n"
 	  "                    at least one is required\n"
 	  "                    additional -a adds backup trackers\n"
+	  "-A <file>         : specify a file from which a full announce URL is read\n"
 	  "-c <comment>      : add a comment to the metainfo\n"
 	  "-d                : don't write the creation date\n"
 	  "-h                : show this help screen\n"
@@ -413,6 +417,7 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 	/* the option structure to pass to getopt_long() */
 	static struct option long_options[] = {
 		{"announce", 1, NULL, 'a'},
+		{"announce-file", 1, NULL, 'A'},
 		{"comment", 1, NULL, 'c'},
 		{"no-date", 0, NULL, 'd'},
 		{"help", 0, NULL, 'h'},
@@ -432,9 +437,9 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 
 	/* now parse the command line options given */
 #ifdef USE_PTHREADS
-#define OPT_STRING "a:c:dhl:n:o:ps:t:vw:"
+#define OPT_STRING "A:a:c:dhl:n:o:ps:t:vw:"
 #else
-#define OPT_STRING "a:c:dhl:n:o:ps:vw:"
+#define OPT_STRING "A:a:c:dhl:n:o:ps:vw:"
 #endif
 #ifdef USE_LONG_OPTIONS
 	while ((c = getopt_long(argc, argv, OPT_STRING,
@@ -444,6 +449,34 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 #endif
 #undef OPT_STRING
 		switch (c) {
+		case 'A':
+			{
+				free(m->announce_from_file);
+				FILE* announce_file = fopen(optarg, "r");
+				if (announce_file == NULL) {
+					fprintf(stderr, "Couldn't open file for reading.\n");
+					exit(EXIT_FAILURE);
+				}
+				char* announce = malloc(MAX_ANNOUNCE_FILE_SIZE + 1);
+				if (announce == NULL) {
+					fprintf(stderr, "Couldn't allocate the buffer for the file.\n");
+				}
+				size_t bytes_read = fread(announce, 1, MAX_ANNOUNCE_FILE_SIZE, announce_file);
+				if (ferror(announce_file) != 0) {
+					fprintf(stderr, "An error occured reading the file.\n");
+					exit(EXIT_FAILURE);
+				}
+				announce[bytes_read] = '\0';
+				char* last = announce + bytes_read;
+				while (last != announce && (isspace((unsigned char)*last) || *last == '\0')) {
+					*last = '\0';
+					--last;
+				}
+
+				fclose(announce_file);
+				m->announce_from_file = announce;
+				break;
+			}
 		case 'a':
 			if (announce_last == NULL) {
 				m->announce_list = announce_last =

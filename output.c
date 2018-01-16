@@ -122,7 +122,12 @@ EXPORT void write_metainfo(FILE *f, metafile_t *m, unsigned char *hash_string)
 	/* every metainfo file is one big dictonary */
 	fprintf(f, "d");
 
-	if (m->announce_list != NULL) {
+	if (m->announce_from_file != NULL) {
+		/* write the announce URL */
+		fprintf(f, "8:announce%lu:%s",
+			(unsigned long)strlen(m->announce_from_file),
+			m->announce_from_file);
+	} else if (m->announce_list != NULL) {
 		/* write the announce URL */
 		fprintf(f, "8:announce%lu:%s",
 			(unsigned long)strlen(m->announce_list->l->s),
