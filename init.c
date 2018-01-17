@@ -26,6 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <unistd.h>       /* getopt(), getcwd(), sysconf() */
 #include <string.h>       /* strcmp(), strlen(), strncpy() */
 #include <ctype.h>        /* isspace() */
+#include <stdbool.h>
 #ifdef USE_LONG_OPTIONS
 #include <getopt.h>       /* getopt_long() */
 #endif
@@ -155,10 +156,11 @@ static void set_absolute_file_path(metafile_t *m)
 }
 
 /*
- * parse a comma separated list of strings <str>[,<str>]* and
+ * parse a separator separated list of strings and
  * return a string list containing the substrings
+ * whitspace characters get removed when trim is set to true
  */
-static slist_t *get_slist(char *s)
+static slist_t *get_slist(char *s, char separator, bool trim)
 {
 	slist_t *list, *last;
 	char *e;
@@ -170,11 +172,14 @@ static slist_t *get_slist(char *s)
 		exit(EXIT_FAILURE);
 	}
 
-	/* add URLs to the list while there are commas in the string */
-	while ((e = strchr(s, ','))) {
-		/* set the commas to \0 so the URLs appear as
+	/* add URLs to the list while there are separator characters in the string */
+	while ((e = strchr(s, separator))) {
+		/* set the separator to \0 so the URLs appear as
 		 * separate strings */
 		*e = '\0';
+		if (trim) {
+			trim_right(s, e);
+		}
 		last->s = s;
 
 		/* move s to point to the next URL */
@@ -191,6 +196,9 @@ static slist_t *get_slist(char *s)
 
 	/* set the last string in the list */
 	last->s = s;
+	if (trim) {
+		trim_right(last->s, last->s + strlen(last->s));
+	}
 	last->next = NULL;
 
 	/* return the list */
@@ -526,7 +534,7 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 				fprintf(stderr, "Out of memory.\n");
 				exit(EXIT_FAILURE);
 			}
-			announce_last->l = get_slist(optarg);
+			announce_last->l = get_slist(optarg, ',', false);
 			break;
 		case 'c':
 			m->comment = optarg;
@@ -563,10 +571,10 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 		case 'w':
 			if (web_seed_last == NULL) {
 				m->web_seed_list = web_seed_last =
-					get_slist(optarg);
+					get_slist(optarg, ',', false);
 			} else {
 				web_seed_last->next =
-					get_slist(optarg);
+					get_slist(optarg, ',', false);
 				web_seed_last = web_seed_last->next;
 			}
 			while (web_seed_last->next)
