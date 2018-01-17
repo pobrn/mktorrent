@@ -53,6 +53,18 @@ static void strip_ending_dirseps(char *s)
 		*end = '\0';
 }
 
+static void trim_right(char* s, char* end)
+{
+	while (end != s && (isspace((unsigned char)*end) || *end == '\0')) {
+		*end = '\0';
+		--end;
+	}
+
+	if (isspace((unsigned char)*end)) {
+		*end = '\0';
+	}
+}
+
 static const char *basename(const char *s)
 {
 	const char *r = s;
@@ -467,11 +479,7 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 					exit(EXIT_FAILURE);
 				}
 				announce[bytes_read] = '\0';
-				char* last = announce + bytes_read;
-				while (last != announce && (isspace((unsigned char)*last) || *last == '\0')) {
-					*last = '\0';
-					--last;
-				}
+				trim_right(announce, announce + bytes_read);
 
 				fclose(announce_file);
 				m->announce_from_file = announce;
