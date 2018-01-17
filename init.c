@@ -517,6 +517,13 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 				trim_right(announce, announce + bytes_read);
 
 				fclose(announce_file);
+				if (announce_last == NULL) {
+					m->announce_list = announce_last = malloc(sizeof(llist_t));
+					announce_last->l = get_slist(announce, '\n', 0);
+				} else {
+					fprintf(stderr, "The announce file options must occur uniquely and it requires no announce set with -a.\n");
+					exit(EXIT_FAILURE);
+				}
 				m->announce_from_file = announce;
 				break;
 			}
