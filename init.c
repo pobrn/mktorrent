@@ -507,6 +507,7 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 				char* announce = malloc(filesize + 1);
 				if (announce == NULL) {
 					fprintf(stderr, "Couldn't allocate the buffer for the file.\n");
+					exit(EXIT_FAILURE);
 				}
 				size_t bytes_read = fread(announce, 1, MAX_ANNOUNCE_FILE_SIZE, announce_file);
 				if (ferror(announce_file) != 0) {
