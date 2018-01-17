@@ -133,8 +133,29 @@ static void close_file(FILE *f)
 int main(int argc, char *argv[])
 {
 	FILE *file;	/* stream for writing to the metainfo file */
-	metafile_t m = {0};
-	m.piece_length = 18;
+	metafile_t m = {
+		/* options */
+		18,   /* piece_length, 2^18 = 256kb by default */
+		NULL, /* announce_from_file */
+		NULL, /* announce_list */
+		NULL, /* torrent_name */
+		NULL, /* metainfo_file_path */
+		NULL, /* web_seed_url */
+		NULL, /* comment */
+		0,    /* target_is_directory  */
+		0,    /* no_creation_date */
+		0,    /* private */
+		NULL, /* source string */
+		0,    /* verbose */
+#ifdef USE_PTHREADS
+		0,    /* threads, initialised by init() */
+#endif
+
+		/* information calculated by read_dir() */
+		0,    /* size */
+		NULL, /* file_list */
+		0     /* pieces */
+	};
 
 	/* print who we are */
 	printf("mktorrent " VERSION " (c) 2007, 2009 Emil Renner Berthing\n\n");
