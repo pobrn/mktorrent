@@ -65,6 +65,22 @@ static void trim_right(char* s, char* end)
 	}
 }
 
+static int get_filesize(FILE* f, long* filesize) {
+	long pos = ftell(f);
+	if (pos == EOF) {
+		return -1;
+	}
+	int err = fseek(f, 0, SEEK_END);
+	if (err != 0) {
+		return -1;
+	}
+	*filesize = ftell(f);
+	if (*filesize == EOF) {
+		return -1;
+	}
+	return fseek(f, 0, SEEK_SET);
+}
+
 static const char *basename(const char *s)
 {
 	const char *r = s;
@@ -469,7 +485,18 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 					fprintf(stderr, "Couldn't open file for reading.\n");
 					exit(EXIT_FAILURE);
 				}
-				char* announce = malloc(MAX_ANNOUNCE_FILE_SIZE + 1);
+				long filesize;
+				int err = get_filesize(announce_file, &filesize);
+				if (err != 0) {
+					fprintf(stderr, "Couldn't determine the filesize successfully.\n");
+					exit(EXIT_FAILURE);
+				}
+				if (filesize > MAX_ANNOUNCE_FILE_SIZE) {
+					fprintf(stderr, "The file is bigger than the maximum allowed size which is %d MiB.\n", MAX_ANNOUNCE_FILE_SIZE / 1024);
+					fprintf(stderr, "Probably you've chosen a wrong file for the announce URL.\n");
+					exit(EXIT_FAILURE);
+				}
+				char* announce = malloc(filesize + 1);
 				if (announce == NULL) {
 					fprintf(stderr, "Couldn't allocate the buffer for the file.\n");
 				}
