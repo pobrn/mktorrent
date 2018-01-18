@@ -25,6 +25,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <sys/stat.h>     /* the stat structure */
 #include <unistd.h>       /* getopt(), getcwd(), sysconf() */
 #include <string.h>       /* strcmp(), strlen(), strncpy() */
+#include <ctype.h>        /* isspace() */
+#include <stdbool.h>
 #ifdef USE_LONG_OPTIONS
 #include <getopt.h>       /* getopt_long() */
 #endif
@@ -35,6 +37,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #define EXPORT
 #endif /* ALLINONE */
 
+#define MAX_ANNOUNCE_FILE_SIZE (1024 * 16)
 #ifndef MAX_OPENFD
 #define MAX_OPENFD 100	/* Maximum number of file descriptors
 			   file_tree_walk() will open */
@@ -49,6 +52,34 @@ static void strip_ending_dirseps(char *s)
 
 	while (end > s && *(--end) == DIRSEP_CHAR)
 		*end = '\0';
+}
+
+static void trim_right(char* s, char* end)
+{
+	while (end != s && (isspace((unsigned char)*end) || *end == '\0')) {
+		*end = '\0';
+		--end;
+	}
+
+	if (isspace((unsigned char)*end)) {
+		*end = '\0';
+	}
+}
+
+static int get_filesize(FILE* f, long* filesize) {
+	long pos = ftell(f);
+	if (pos == EOF) {
+		return -1;
+	}
+	int err = fseek(f, 0, SEEK_END);
+	if (err != 0) {
+		return -1;
+	}
+	*filesize = ftell(f);
+	if (*filesize == EOF) {
+		return -1;
+	}
+	return fseek(f, 0, SEEK_SET);
 }
 
 static const char *basename(const char *s)
@@ -125,10 +156,11 @@ static void set_absolute_file_path(metafile_t *m)
 }
 
 /*
- * parse a comma separated list of strings <str>[,<str>]* and
+ * parse a separator separated list of strings and
  * return a string list containing the substrings
+ * whitspace characters get removed when trim is set to true
  */
-static slist_t *get_slist(char *s)
+static slist_t *get_slist(char *s, char separator, bool trim)
 {
 	slist_t *list, *last;
 	char *e;
@@ -140,11 +172,14 @@ static slist_t *get_slist(char *s)
 		exit(EXIT_FAILURE);
 	}
 
-	/* add URLs to the list while there are commas in the string */
-	while ((e = strchr(s, ','))) {
-		/* set the commas to \0 so the URLs appear as
+	/* add URLs to the list while there are separator characters in the string */
+	while ((e = strchr(s, separator))) {
+		/* set the separator to \0 so the URLs appear as
 		 * separate strings */
 		*e = '\0';
+		if (trim) {
+			trim_right(s, e);
+		}
 		last->s = s;
 
 		/* move s to point to the next URL */
@@ -161,6 +196,9 @@ static slist_t *get_slist(char *s)
 
 	/* set the last string in the list */
 	last->s = s;
+	if (trim) {
+		trim_right(last->s, last->s + strlen(last->s));
+	}
 	last->next = NULL;
 
 	/* return the list */
@@ -279,6 +317,7 @@ static void print_help()
 	  "-a, --announce=<url>[,<url>]* : specify the full announce URLs\n"
 	  "                                at least one is required\n"
 	  "                                additional -a adds backup trackers\n"
+	  "-A, --announce-file=<file>    : specify a file from which a full announce URL is read\n"
 	  "-c, --comment=<comment>       : add a comment to the metainfo\n"
 	  "-d, --no-date                 : don't write the creation date\n"
 	  "-h, --help                    : show this help screen\n"
@@ -301,6 +340,7 @@ static void print_help()
 	  "-a <url>[,<url>]* : specify the full announce URLs\n"
 	  "                    at least one is required\n"
 	  "                    additional -a adds backup trackers\n"
+	  "-A <file>         : specify a file from which a full announce URL is read\n"
 	  "-c <comment>      : add a comment to the metainfo\n"
 	  "-d                : don't write the creation date\n"
 	  "-h                : show this help screen\n"
@@ -413,6 +453,7 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 	/* the option structure to pass to getopt_long() */
 	static struct option long_options[] = {
 		{"announce", 1, NULL, 'a'},
+		{"announce-file", 1, NULL, 'A'},
 		{"comment", 1, NULL, 'c'},
 		{"no-date", 0, NULL, 'd'},
 		{"help", 0, NULL, 'h'},
@@ -432,9 +473,9 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 
 	/* now parse the command line options given */
 #ifdef USE_PTHREADS
-#define OPT_STRING "a:c:dhl:n:o:ps:t:vw:"
+#define OPT_STRING "A:a:c:dhl:n:o:ps:t:vw:"
 #else
-#define OPT_STRING "a:c:dhl:n:o:ps:vw:"
+#define OPT_STRING "A:a:c:dhl:n:o:ps:vw:"
 #endif
 #ifdef USE_LONG_OPTIONS
 	while ((c = getopt_long(argc, argv, OPT_STRING,
@@ -444,6 +485,49 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 #endif
 #undef OPT_STRING
 		switch (c) {
+		case 'A':
+			{
+				free(m->announce_from_file);
+				FILE* announce_file = fopen(optarg, "r");
+				if (announce_file == NULL) {
+					fprintf(stderr, "Couldn't open file for reading.\n");
+					exit(EXIT_FAILURE);
+				}
+				long filesize;
+				int err = get_filesize(announce_file, &filesize);
+				if (err != 0) {
+					fprintf(stderr, "Couldn't determine the filesize successfully.\n");
+					exit(EXIT_FAILURE);
+				}
+				if (filesize > MAX_ANNOUNCE_FILE_SIZE) {
+					fprintf(stderr, "The file is bigger than the maximum allowed size which is %d MiB.\n", MAX_ANNOUNCE_FILE_SIZE / 1024);
+					fprintf(stderr, "Probably you've chosen a wrong file for the announce URL.\n");
+					exit(EXIT_FAILURE);
+				}
+				char* announce = malloc(filesize + 1);
+				if (announce == NULL) {
+					fprintf(stderr, "Couldn't allocate the buffer for the file.\n");
+					exit(EXIT_FAILURE);
+				}
+				size_t bytes_read = fread(announce, 1, MAX_ANNOUNCE_FILE_SIZE, announce_file);
+				if (ferror(announce_file) != 0) {
+					fprintf(stderr, "An error occured reading the file.\n");
+					exit(EXIT_FAILURE);
+				}
+				announce[bytes_read] = '\0';
+				trim_right(announce, announce + bytes_read);
+
+				fclose(announce_file);
+				if (announce_last == NULL) {
+					m->announce_list = announce_last = malloc(sizeof(llist_t));
+					announce_last->l = get_slist(announce, '\n', 0);
+				} else {
+					fprintf(stderr, "The announce file options must occur uniquely and it requires no announce set with -a.\n");
+					exit(EXIT_FAILURE);
+				}
+				m->announce_from_file = announce;
+				break;
+			}
 		case 'a':
 			if (announce_last == NULL) {
 				m->announce_list = announce_last =
@@ -458,7 +542,7 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 				fprintf(stderr, "Out of memory.\n");
 				exit(EXIT_FAILURE);
 			}
-			announce_last->l = get_slist(optarg);
+			announce_last->l = get_slist(optarg, ',', false);
 			break;
 		case 'c':
 			m->comment = optarg;
@@ -495,10 +579,10 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 		case 'w':
 			if (web_seed_last == NULL) {
 				m->web_seed_list = web_seed_last =
-					get_slist(optarg);
+					get_slist(optarg, ',', false);
 			} else {
 				web_seed_last->next =
-					get_slist(optarg);
+					get_slist(optarg, ',', false);
 				web_seed_last = web_seed_last->next;
 			}
 			while (web_seed_last->next)

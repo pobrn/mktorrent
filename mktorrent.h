@@ -37,6 +37,7 @@ struct flist_s {
 typedef struct {
 	/* options */
 	unsigned int piece_length; /* piece length */
+	char *announce_from_file;  /* read announce URL from file */
 	llist_t *announce_list;    /* announce URLs */
 	char *comment;             /* optional comment */
 	const char *torrent_name;  /* name of torrent (name of directory) */
