@@ -30,7 +30,7 @@ struct flist_s;
 typedef struct flist_s flist_t;
 struct flist_s {
 	char *path;
-	off_t size;
+	int64_t size;
 	flist_t *next;
 };
 
@@ -52,7 +52,7 @@ typedef struct {
 #endif
 
 	/* information calculated by read_dir() */
-	off_t size;                /* combined size of all files */
+	int64_t size;                /* combined size of all files */
 	flist_t *file_list;        /* list of files and their sizes */
 	unsigned int pieces;       /* number of pieces */
 } metafile_t;

@@ -24,10 +24,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <stdio.h>       /* printf() etc. */
 #include <fcntl.h>       /* open() */
 #include <unistd.h>      /* access(), read(), close() */
+#include <inttypes.h>    /* PRId64 etc. */
+
 #ifdef USE_OPENSSL
 #include <openssl/sha.h> /* SHA1() */
 #else
-#include <inttypes.h>
 #include "sha1.h"
 #endif
 #include <pthread.h>     /* pthread functions and data structures */
@@ -212,11 +213,11 @@ static void read_files(metafile_t *m, queue_t *q, unsigned char *pos)
 {
 	int fd;              /* file descriptor */
 	flist_t *f;          /* pointer to a place in the file list */
-	ssize_t r = 0;       /* number of bytes read from file(s)
+	size_t r = 0;        /* number of bytes read from file(s)
 	                        into the read buffer */
 #ifndef NO_HASH_CHECK
-	off_t counter = 0;   /* number of bytes hashed
-	                        should match size when done */
+	int64_t counter = 0;	/* number of bytes hashed
+				   should match size when done */
 #endif
 	piece_t *p = get_free(q, m->piece_length);
 
@@ -276,8 +277,8 @@ static void read_files(metafile_t *m, queue_t *q, unsigned char *pos)
 #ifndef NO_HASH_CHECK
 	counter += r;
 	if (counter != m->size) {
-		fprintf(stderr, "Counted %" PRIoff " bytes, "
-				"but hashed %" PRIoff " bytes. "
+		fprintf(stderr, "Counted %" PRId64 " bytes, "
+				"but hashed %" PRId64 " bytes. "
 				"Something is wrong...\n", m->size, counter);
 		exit(EXIT_FAILURE);
 	}
@@ -297,7 +298,7 @@ EXPORT unsigned char *make_hash(metafile_t *m)
 	pthread_t print_progress_thread;	/* progress printer thread */
 	pthread_t *workers;
 	unsigned char *hash_string;		/* the hash string */
-	unsigned int i;
+	int i;
 	int err;
 
 	workers = malloc(m->threads * sizeof(pthread_t));

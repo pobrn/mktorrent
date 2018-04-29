@@ -21,10 +21,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <sys/types.h>    /* off_t */
 #include <errno.h>        /* errno */
 #include <string.h>       /* strerror() */
-#include <stdio.h>        /* printf() etc. */
+#include <stdio.h>        /* perror(), printf() etc. */
 #include <sys/stat.h>     /* the stat structure */
 #include <unistd.h>       /* getopt(), getcwd(), sysconf() */
 #include <string.h>       /* strcmp(), strlen(), strncpy() */
+#include <strings.h>      /* strcasecmp() */
+#include <inttypes.h>     /* PRId64 etc. */
 #ifdef USE_LONG_OPTIONS
 #include <getopt.h>       /* getopt_long() */
 #endif

@@ -24,11 +24,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <stdio.h>        /* printf() etc. */
 #include <fcntl.h>        /* open() */
 #include <unistd.h>       /* read(), close() */
+#include <inttypes.h>     /* PRId64 etc. */
 
 #ifdef USE_OPENSSL
 #include <openssl/sha.h>  /* SHA1() */
 #else
-#include <inttypes.h>
 #include "sha1.h"
 #endif
 
@@ -60,11 +60,11 @@ EXPORT unsigned char *make_hash(metafile_t *m)
 	unsigned char *pos;             /* position in the hash string */
 	unsigned char *read_buf;        /* read buffer */
 	int fd;                         /* file descriptor */
-	ssize_t r;                      /* number of bytes read from file(s) into
+	size_t r;                       /* number of bytes read from file(s) into
 	                                   the read buffer */
 	SHA_CTX c;                      /* SHA1 hashing context */
 #ifndef NO_HASH_CHECK
-	off_t counter = 0;              /* number of bytes hashed
+	int64_t counter = 0;            /* number of bytes hashed
 	                                   should match size when done */
 #endif
 
@@ -144,8 +144,8 @@ EXPORT unsigned char *make_hash(metafile_t *m)
 #ifndef NO_HASH_CHECK
 	counter += r;
 	if (counter != m->size) {
-		fprintf(stderr, "Counted %" PRIoff " bytes, "
-				"but hashed %" PRIoff " bytes. "
+		fprintf(stderr, "Counted %" PRId64 " bytes, "
+				"but hashed %" PRId64 " bytes. "
 				"Something is wrong...\n", m->size, counter);
 		exit(EXIT_FAILURE);
 	}
