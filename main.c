@@ -28,6 +28,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #ifdef ALLINONE
 #include <sys/stat.h>
 #include <unistd.h>      /* access(), read(), close(), getcwd(), sysconf() */
+#include <strings.h>     /* strcasecmp() */
+#include <inttypes.h>    /* PRId64 etc. */
+#include <ctype.h>       /* isdigit */
 #ifdef USE_LONG_OPTIONS
 #include <getopt.h>      /* getopt_long() */
 #endif
