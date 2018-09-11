@@ -279,7 +279,6 @@ static void print_help()
 	  "Options:\n"
 #ifdef USE_LONG_OPTIONS
 	  "-a, --announce=<url>[,<url>]* : specify the full announce URLs\n"
-	  "                                at least one is required\n"
 	  "                                additional -a adds backup trackers\n"
 	  "-c, --comment=<comment>       : add a comment to the metainfo\n"
 	  "-d, --no-date                 : don't write the creation date\n"
