@@ -5,4 +5,4 @@ For more options look in the Makefile.
 If you use an old version of BSD's make, you might need
 make -f BSDmakefile
 
-See http://mktorrent.sourceforge.net/ for more info.
+See https://github.com/Rudde/mktorrent/wiki for more info.
