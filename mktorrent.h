@@ -54,6 +54,7 @@ typedef struct {
 	/* information calculated by read_dir() */
 	int64_t size;                /* combined size of all files */
 	flist_t *file_list;        /* list of files and their sizes */
+	int64_t file_count;        /* count of total files */
 	unsigned int pieces;       /* number of pieces */
 } metafile_t;
 

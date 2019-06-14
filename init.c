@@ -208,6 +208,7 @@ static int is_dir(metafile_t *m, char *target)
 	m->file_list->next = NULL;
 	/* ..and size variable */
 	m->size = s.st_size;
+	m->file_count = 1;
 
 	/* now return 0 since it isn't a directory */
 	return 0;
@@ -244,11 +245,8 @@ static int process_node(const char *path, const struct stat *sb, void *data)
 	/* count the total size of the files */
 	m->size += sb->st_size;
 
-	/* find where to insert the new node so that the file list
-	   remains ordered by the path */
+	/* just insert the new node at the head of the list and sort it later */
 	p = &m->file_list;
-	while (*p && strcmp(path, (*p)->path) > 0)
-		p = &((*p)->next);
 
 	/* create a new file list node for the file */
 	new_node = malloc(sizeof(flist_t));
@@ -262,10 +260,57 @@ static int process_node(const char *path, const struct stat *sb, void *data)
 	/* now insert the node there */
 	new_node->next = *p;
 	*p = new_node;
+	m->file_count += 1;
 
-	/* insertion sort is a really stupid way of sorting a list,
-	   but usually a torrent doesn't contain too many files,
-	   so we'll probably be alright ;) */
+	return 0;
+}
+
+static int cmp_flist(const void *left, const void *right)
+{
+	flist_t *f_left = *(const flist_t **)left;
+	flist_t *f_right = *(const flist_t **)right;
+	return strcmp(f_left->path, f_right->path);
+}
+
+static int sort_file_list(void *data)
+{
+	flist_t **nodes;
+	flist_t *current_node;
+	size_t i = 0;
+	metafile_t *m = data;
+
+	/* no need to sort a list with a single item */
+	if (m->file_count <= 1)
+		return 0;
+
+	nodes = malloc(sizeof(flist_t*) * m->file_count);
+	if (nodes == NULL) {
+		fprintf(stderr, "Out of memory\n");
+		return -1;
+	}
+
+	/* stuff the linked list into an array for easier sorting */
+	current_node = m->file_list;
+	while (current_node) {
+		nodes[i++] = current_node;
+		current_node = current_node->next;
+	}
+
+	/* sort the node pointers in the array */
+	// if (mergesort(nodes, m->file_count, sizeof(flist_t*), cmp_flist))
+	// 	exit(EXIT_FAILURE);
+	qsort(nodes, m->file_count, sizeof(flist_t*), cmp_flist);
+
+	/* fix the .next pointers on each node */
+	for (i=1; i < m->file_count; i++) {
+		nodes[i-1]->next = nodes[i];
+	}
+	nodes[i-1]->next = NULL;
+	m->file_list = nodes[0];
+
+	/* release the array since we don't need it anymore */
+	free(nodes);
+
 	return 0;
 }
 
@@ -574,6 +619,9 @@ EXPORT void init(metafile_t *m, int argc, char *argv[])
 		}
 
 		if (file_tree_walk("." DIRSEP, MAX_OPENFD, process_node, m))
+			exit(EXIT_FAILURE);
+
+		if (sort_file_list(m))
 			exit(EXIT_FAILURE);
 	}
 
