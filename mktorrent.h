@@ -1,5 +1,5 @@
-#ifndef _MKTORRENT_H
-#define _MKTORRENT_H
+#ifndef MKTORRENT_MKTORRENT_H
+#define MKTORRENT_MKTORRENT_H
 
 #ifdef _WIN32
 #define DIRSEP      "\\"
@@ -34,7 +34,7 @@ struct flist_s {
 	flist_t *next;
 };
 
-typedef struct {
+struct metafile {
 	/* options */
 	unsigned int piece_length; /* piece length */
 	llist_t *announce_list;    /* announce URLs */
@@ -55,6 +55,6 @@ typedef struct {
 	int64_t size;                /* combined size of all files */
 	flist_t *file_list;        /* list of files and their sizes */
 	unsigned int pieces;       /* number of pieces */
-} metafile_t;
+};
 
-#endif /* _MKTORRENT_H */
+#endif /* MKTORRENT_MKTORRENT_H */

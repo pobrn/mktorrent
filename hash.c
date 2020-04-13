@@ -53,7 +53,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  * concatenation of the (20 byte) SHA1 hash of every piece
  * last piece may be shorter
  */
-EXPORT unsigned char *make_hash(metafile_t *m)
+EXPORT unsigned char *make_hash(struct metafile *m)
 {
 	flist_t *f;                     /* pointer to a place in the file list */
 	unsigned char *hash_string;     /* the hash string */

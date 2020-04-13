@@ -70,11 +70,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include "output.c"
 #else /* ALLINONE */
 /* init.c */
-extern void init(metafile_t *m, int argc, char *argv[]);
+extern void init(struct metafile *m, int argc, char *argv[]);
 /* hash.c */
-extern unsigned char *make_hash(metafile_t *m);
+extern unsigned char *make_hash(struct metafile *m);
 /* output.c */
-extern void write_metainfo(FILE *f, metafile_t *m, unsigned char *hash_string);
+extern void write_metainfo(FILE *f, struct metafile *m, unsigned char *hash_string);
 #endif /* ALLINONE */
 
 #ifndef O_BINARY
@@ -136,7 +136,7 @@ static void close_file(FILE *f)
 int main(int argc, char *argv[])
 {
 	FILE *file;	/* stream for writing to the metainfo file */
-	metafile_t m = {
+	struct metafile m = {
 		/* options */
 		18,   /* piece_length, 2^18 = 256kb by default */
 		NULL, /* announce_list */
