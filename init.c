@@ -300,7 +300,6 @@ static void print_help()
 	  "                                additional -w adds more URLs\n"
 #else
 	  "-a <url>[,<url>]* : specify the full announce URLs\n"
-	  "                    at least one is required\n"
 	  "                    additional -a adds backup trackers\n"
 	  "-c <comment>      : add a comment to the metainfo\n"
 	  "-d                : don't write the creation date\n"
