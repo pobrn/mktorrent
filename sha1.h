@@ -1,8 +1,8 @@
 /* Public API for Steve Reid's public domain SHA-1 implementation */
 /* This file is in the public domain */
 
-#ifndef __SHA1_H
-#define __SHA1_H
+#ifndef MKTORRENT_SHA1_H
+#define MKTORRENT_SHA1_H
 
 typedef struct {
     uint32_t state[5];
@@ -18,4 +18,4 @@ void SHA1_Update(SHA_CTX *context, const uint8_t *data, unsigned long len);
 void SHA1_Final(uint8_t *digest, SHA_CTX *context);
 #endif
 
-#endif /* __SHA1_H */
+#endif /* MKTORRENT_SHA1_H */

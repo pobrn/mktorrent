@@ -67,7 +67,7 @@ static const char *basename(const char *s)
 	return r;
 }
 
-static void set_absolute_file_path(metafile_t *m)
+static void set_absolute_file_path(struct metafile *m)
 {
 	char *string;		/* string to return */
 	size_t length = 32;	/* length of the string */
@@ -173,7 +173,7 @@ static slist_t *get_slist(char *s)
  * checks if target is a directory
  * sets the file_list and size if it isn't
  */
-static int is_dir(metafile_t *m, char *target)
+static int is_dir(struct metafile *m, char *target)
 {
 	struct stat s;		/* stat structure for stat() to fill */
 
@@ -222,7 +222,7 @@ static int process_node(const char *path, const struct stat *sb, void *data)
 {
 	flist_t **p;            /* pointer to a node in the file list */
 	flist_t *new_node;      /* place to store a newly created node */
-	metafile_t *m = data;
+	struct metafile *m = data;
 
 	/* skip non-regular files */
 	if (!S_ISREG(sb->st_mode))
@@ -361,7 +361,7 @@ static void print_web_seed_list(slist_t *list)
 /*
  * print out all the options
  */
-static void dump_options(metafile_t *m)
+static void dump_options(struct metafile *m)
 {
 	printf("Options:\n"
 	       "  Announce URLs:\n");
@@ -405,7 +405,7 @@ static void dump_options(metafile_t *m)
  * and fill out the appropriate fields of the
  * metafile structure
  */
-EXPORT void init(metafile_t *m, int argc, char *argv[])
+EXPORT void init(struct metafile *m, int argc, char *argv[])
 {
 	int c;			/* return value of getopt() */
 	llist_t *announce_last = NULL;

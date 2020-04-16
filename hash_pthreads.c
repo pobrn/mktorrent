@@ -53,20 +53,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #define OPENFLAGS (O_RDONLY | O_BINARY)
 #endif
 
-struct piece_s;
-typedef struct piece_s piece_t;
-struct piece_s {
-	piece_t *next;
+struct piece {
+	struct piece *next;
 	unsigned char *dest;
 	unsigned long len;
 	unsigned char data[1];
 };
 
-struct queue_s;
-typedef struct queue_s queue_t;
-struct queue_s {
-	piece_t *free;
-	piece_t *full;
+struct queue {
+	struct piece *free;
+	struct piece *full;
 	unsigned int buffers_max;
 	unsigned int buffers;
 	pthread_mutex_t mutex_free;
@@ -78,16 +74,16 @@ struct queue_s {
 	unsigned int pieces_hashed;
 };
 
-static piece_t *get_free(queue_t *q, size_t piece_length)
+static struct piece *get_free(struct queue *q, size_t piece_length)
 {
-	piece_t *r;
+	struct piece *r;
 
 	pthread_mutex_lock(&q->mutex_free);
 	if (q->free) {
 		r = q->free;
 		q->free = r->next;
 	} else if (q->buffers < q->buffers_max) {
-		r = malloc(sizeof(piece_t) - 1 + piece_length);
+		r = malloc(sizeof(struct piece) - 1 + piece_length);
 		if (r == NULL) {
 			fprintf(stderr, "Out of memory.\n");
 			exit(EXIT_FAILURE);
@@ -107,9 +103,9 @@ static piece_t *get_free(queue_t *q, size_t piece_length)
 	return r;
 }
 
-static piece_t *get_full(queue_t *q)
+static struct piece *get_full(struct queue *q)
 {
-	piece_t *r;
+	struct piece *r;
 
 	pthread_mutex_lock(&q->mutex_full);
 again:
@@ -127,7 +123,7 @@ again:
 	return r;
 }
 
-static void put_free(queue_t *q, piece_t *p, unsigned int hashed)
+static void put_free(struct queue *q, struct piece *p, unsigned int hashed)
 {
 	pthread_mutex_lock(&q->mutex_free);
 	p->next = q->free;
@@ -137,7 +133,7 @@ static void put_free(queue_t *q, piece_t *p, unsigned int hashed)
 	pthread_cond_signal(&q->cond_full);
 }
 
-static void put_full(queue_t *q, piece_t *p)
+static void put_full(struct queue *q, struct piece *p)
 {
 	pthread_mutex_lock(&q->mutex_full);
 	p->next = q->full;
@@ -146,7 +142,7 @@ static void put_full(queue_t *q, piece_t *p)
 	pthread_cond_signal(&q->cond_empty);
 }
 
-static void set_done(queue_t *q)
+static void set_done(struct queue *q)
 {
 	pthread_mutex_lock(&q->mutex_full);
 	q->done = 1;
@@ -154,12 +150,12 @@ static void set_done(queue_t *q)
 	pthread_cond_broadcast(&q->cond_empty);
 }
 
-static void free_buffers(queue_t *q)
+static void free_buffers(struct queue *q)
 {
-	piece_t *first = q->free;
+	struct piece *first = q->free;
 
 	while (first) {
-		piece_t *p = first;
+		struct piece *p = first;
 		first = p->next;
 		free(p);
 	}
@@ -172,7 +168,7 @@ static void free_buffers(queue_t *q)
  */
 static void *print_progress(void *data)
 {
-	queue_t *q = data;
+	struct queue *q = data;
 	int err;
 
 	err = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
@@ -195,8 +191,8 @@ static void *print_progress(void *data)
 
 static void *worker(void *data)
 {
-	queue_t *q = data;
-	piece_t *p;
+	struct queue *q = data;
+	struct piece *p;
 	SHA_CTX c;
 
 	while ((p = get_full(q))) {
@@ -209,7 +205,7 @@ static void *worker(void *data)
 	return NULL;
 }
 
-static void read_files(metafile_t *m, queue_t *q, unsigned char *pos)
+static void read_files(struct metafile *m, struct queue *q, unsigned char *pos)
 {
 	int fd;              /* file descriptor */
 	flist_t *f;          /* pointer to a place in the file list */
@@ -219,7 +215,7 @@ static void read_files(metafile_t *m, queue_t *q, unsigned char *pos)
 	int64_t counter = 0;	/* number of bytes hashed
 				   should match size when done */
 #endif
-	piece_t *p = get_free(q, m->piece_length);
+	struct piece *p = get_free(q, m->piece_length);
 
 	/* go through all the files in the file list */
 	for (f = m->file_list; f; f = f->next) {
@@ -285,9 +281,9 @@ static void read_files(metafile_t *m, queue_t *q, unsigned char *pos)
 #endif
 }
 
-EXPORT unsigned char *make_hash(metafile_t *m)
+EXPORT unsigned char *make_hash(struct metafile *m)
 {
-	queue_t q = {
+	struct queue q = {
 		NULL, NULL, 0, 0,
 		PTHREAD_MUTEX_INITIALIZER,
 		PTHREAD_MUTEX_INITIALIZER,
