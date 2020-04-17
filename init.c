@@ -371,7 +371,7 @@ static void dump_options(struct metafile *m)
 	       "  Metafile:     %s\n"
 	       "  Piece length: %u\n"
 #ifdef USE_PTHREADS
-	       "  Threads:      %u\n"
+	       "  Threads:      %ld\n"
 #endif
 	       "  Be verbose:   yes\n",
 	       m->torrent_name, m->metainfo_file_path, m->piece_length
@@ -541,7 +541,7 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 	} else {
 #ifdef _SC_NPROCESSORS_ONLN
 		m->threads = sysconf(_SC_NPROCESSORS_ONLN);
-		if (m->threads == -1)
+		if (m->threads < 0)
 #endif
 			m->threads = 2; /* some sane default */
 	}
