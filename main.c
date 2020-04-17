@@ -17,49 +17,24 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
 
+
 #include <stdlib.h>      /* exit() */
-#include <sys/types.h>   /* off_t */
 #include <errno.h>       /* errno */
 #include <string.h>      /* strerror() */
 #include <stdio.h>       /* printf() etc. */
 #include <sys/stat.h>    /* S_IRUSR, S_IWUSR, S_IRGRP, S_IROTH */
 #include <fcntl.h>       /* open() */
 
-#ifdef ALLINONE
-#include <sys/stat.h>
-#include <unistd.h>      /* access(), read(), close(), getcwd(), sysconf() */
-#include <strings.h>     /* strcasecmp() */
-#include <inttypes.h>    /* PRId64 etc. */
-#include <ctype.h>       /* isdigit */
-#ifdef USE_LONG_OPTIONS
-#include <getopt.h>      /* getopt_long() */
-#endif
-#include <time.h>        /* time() */
-#include <dirent.h>      /* opendir(), closedir(), readdir() etc. */
-#ifdef USE_OPENSSL
-#include <openssl/sha.h> /* SHA1(), SHA_DIGEST_LENGTH */
-#else
-#include <inttypes.h>
-#endif
-#ifdef USE_PTHREADS
-#include <pthread.h>     /* pthread functions and data structures */
-#endif
-
-#define EXPORT static
-#else  /* ALLINONE */
-
-#define EXPORT
-#endif /* ALLINONE */
-
+#include "export.h"
 #include "mktorrent.h"
+#include "init.h"
+#include "hash.h"
+#include "output.h"
 
 #ifdef ALLINONE
-#include "ftw.c"
-#include "init.c"
+/* include all .c files in alphabetical order */
 
-#ifndef USE_OPENSSL
-#include "sha1.c"
-#endif
+#include "ftw.c"
 
 #ifdef USE_PTHREADS
 #include "hash_pthreads.c"
@@ -67,14 +42,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include "hash.c"
 #endif
 
+#include "init.c"
 #include "output.c"
-#else /* ALLINONE */
-/* init.c */
-extern void init(struct metafile *m, int argc, char *argv[]);
-/* hash.c */
-extern unsigned char *make_hash(struct metafile *m);
-/* output.c */
-extern void write_metainfo(FILE *f, struct metafile *m, unsigned char *hash_string);
+
+#ifndef USE_OPENSSL
+#include "sha1.c"
+#endif
+
 #endif /* ALLINONE */
 
 #ifndef O_BINARY
@@ -84,9 +58,11 @@ extern void write_metainfo(FILE *f, struct metafile *m, unsigned char *hash_stri
 #ifndef S_IRGRP
 #define S_IRGRP 0
 #endif
+
 #ifndef S_IROTH
 #define S_IROTH 0
 #endif
+
 
 /*
  * create and open the metainfo file for writing and create a stream for it

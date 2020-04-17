@@ -16,7 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
-#ifndef ALLINONE
+
+
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
@@ -26,16 +27,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <unistd.h>
 #include <dirent.h>
 
-#ifdef _WIN32
-#define DIRSEP_CHAR '\\'
-#else
-#define DIRSEP_CHAR '/'
-#endif /* _WIN32 */
-
-#define EXPORT
-#endif /* ALLINONE */
-
+#include "export.h"
+#include "mktorrent.h" /* DIRSEP_CHAR */
 #include "ftw.h"
+
 
 struct dir_state {
 	struct dir_state *next;

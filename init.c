@@ -16,7 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
-#ifndef ALLINONE
+
+
 #include <stdlib.h>       /* exit() */
 #include <sys/types.h>    /* off_t */
 #include <errno.h>        /* errno */
@@ -27,20 +28,20 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <string.h>       /* strcmp(), strlen(), strncpy() */
 #include <strings.h>      /* strcasecmp() */
 #include <inttypes.h>     /* PRId64 etc. */
+
 #ifdef USE_LONG_OPTIONS
 #include <getopt.h>       /* getopt_long() */
 #endif
 
+#include "export.h"
 #include "mktorrent.h"
 #include "ftw.h"
-
-#define EXPORT
-#endif /* ALLINONE */
 
 #ifndef MAX_OPENFD
 #define MAX_OPENFD 100	/* Maximum number of file descriptors
 			   file_tree_walk() will open */
 #endif
+
 
 static void strip_ending_dirseps(char *s)
 {

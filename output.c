@@ -16,22 +16,23 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
-#ifndef ALLINONE
+
+
 #include <sys/types.h>    /* off_t */
-#include <stdio.h>        /* printf() etc. */
+#include <stdio.h>        /* fprintf() etc. */
 #include <string.h>       /* strlen() etc. */
 #include <time.h>         /* time() */
+
 #ifdef USE_OPENSSL
 #include <openssl/sha.h>  /* SHA_DIGEST_LENGTH */
 #else
-#include <inttypes.h>
 #include "sha1.h"
 #endif
 
-#include "mktorrent.h"
+#include "export.h"       /* EXPORT */
+#include "mktorrent.h"    /* struct metafile */
+#include "output.h"
 
-#define EXPORT
-#endif /* ALLINONE */
 
 /*
  * write announce list
