@@ -93,9 +93,10 @@ EXPORT unsigned char *make_hash(struct metafile *m)
 					f->path, strerror(errno));
 			exit(EXIT_FAILURE);
 		}
+#ifndef SILENT
 		printf("Hashing %s.\n", f->path);
 		fflush(stdout);
-
+#endif
 		/* fill the read buffer with the contents of the file and append
 		   the SHA1 hash of it to the hash string when the buffer is full.
 		   repeat until we can't fill the read buffer and we've thus come

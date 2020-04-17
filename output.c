@@ -116,7 +116,9 @@ static void write_web_seed_list(FILE *f, slist_t *list)
 EXPORT void write_metainfo(FILE *f, struct metafile *m, unsigned char *hash_string)
 {
 	/* let the user know we've started writing the metainfo file */
+#ifndef SILENT
 	printf("Writing metainfo file... ");
+#endif
 	fflush(stdout);
 
 	/* every metainfo file is one big dictonary */
@@ -186,6 +188,8 @@ EXPORT void write_metainfo(FILE *f, struct metafile *m, unsigned char *hash_stri
 	fprintf(f, "e");
 
 	/* let the user know we're done already */
+#ifndef SILENT
 	printf("done.\n");
+#endif
 	fflush(stdout);
 }

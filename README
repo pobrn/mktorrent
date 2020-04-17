@@ -1,5 +1,8 @@
 Type 'make' to build the program.
 Do 'make install' to install the program to /usr/local/bin.
+
+Do 'make aslib' to compile mktorrent as static library: libmktorrent.a 
+
 For more options look in the Makefile.
 
 If you use an old version of BSD's make, you might need
