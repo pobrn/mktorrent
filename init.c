@@ -541,7 +541,7 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 	} else {
 #ifdef _SC_NPROCESSORS_ONLN
 		m->threads = sysconf(_SC_NPROCESSORS_ONLN);
-		if (m->threads < 0)
+		if (m->threads <= 0)
 #endif
 			m->threads = 2; /* some sane default */
 	}
