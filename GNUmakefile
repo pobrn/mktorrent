@@ -18,7 +18,7 @@
 include Makefile
 
 CC      ?= cc
-CFLAGS  ?= -O2 -Wall
+CFLAGS  ?= -O2 -Wall -Wextra -Wpedantic
 INSTALL ?= install
 PREFIX  ?= /usr/local
 

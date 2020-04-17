@@ -19,7 +19,7 @@
 
 # Default settings shown
 #CC      = cc
-#CFLAGS  = -O2 -Wall
+#CFLAGS  = -O2 -Wall -Wextra -Wpedantic
 #LDFLAGS =
 #INSTALL = install
 #PREFIX  = /usr/local
