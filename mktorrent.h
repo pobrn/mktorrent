@@ -48,7 +48,7 @@ struct metafile {
 	char *source;              /* set source for private trackers */
 	int verbose;               /* be verbose */
 #ifdef USE_PTHREADS
-	unsigned int threads;      /* number of threads used for hashing */
+	long threads;              /* number of threads used for hashing */
 #endif
 
 	/* information calculated by read_dir() */
