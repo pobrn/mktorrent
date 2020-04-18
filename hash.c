@@ -16,9 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
-#ifndef ALLINONE
+
+
 #include <stdlib.h>       /* exit() */
-#include <sys/types.h>    /* off_t */
 #include <errno.h>        /* errno */
 #include <string.h>       /* strerror() */
 #include <stdio.h>        /* printf() etc. */
@@ -32,10 +32,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include "sha1.h"
 #endif
 
+#include "export.h"
 #include "mktorrent.h"
-
-#define EXPORT
-#endif /* ALLINONE */
+#include "hash.h"
 
 #ifndef O_BINARY
 #define O_BINARY 0
@@ -46,6 +45,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #else
 #define OPENFLAGS (O_RDONLY | O_BINARY)
 #endif
+
 
 /*
  * go through the files in file_list, split their contents into pieces

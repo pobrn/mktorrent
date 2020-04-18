@@ -16,28 +16,27 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
-#ifndef ALLINONE
-#include <stdlib.h>      /* exit(), malloc() */
-#include <sys/types.h>   /* off_t */
-#include <errno.h>       /* errno */
-#include <string.h>      /* strerror() */
-#include <stdio.h>       /* printf() etc. */
-#include <fcntl.h>       /* open() */
-#include <unistd.h>      /* access(), read(), close() */
-#include <inttypes.h>    /* PRId64 etc. */
+
+
+#include <stdlib.h>       /* exit(), malloc() */
+#include <sys/types.h>    /* off_t */
+#include <errno.h>        /* errno */
+#include <string.h>       /* strerror() */
+#include <stdio.h>        /* printf() etc. */
+#include <fcntl.h>        /* open() */
+#include <unistd.h>       /* read(), close() */
+#include <inttypes.h>     /* PRId64 etc. */
+#include <pthread.h>
 
 #ifdef USE_OPENSSL
-#include <openssl/sha.h> /* SHA1() */
+#include <openssl/sha.h>  /* SHA1() */
 #else
 #include "sha1.h"
 #endif
-#include <pthread.h>     /* pthread functions and data structures */
 
+#include "export.h"
 #include "mktorrent.h"
-
-#define EXPORT
-#endif /* ALLINONE */
-
+#include "hash.h"
 
 #ifndef PROGRESS_PERIOD
 #define PROGRESS_PERIOD 200000
@@ -52,6 +51,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #else
 #define OPENFLAGS (O_RDONLY | O_BINARY)
 #endif
+
 
 struct piece {
 	struct piece *next;

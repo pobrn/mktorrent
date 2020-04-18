@@ -16,16 +16,16 @@
 /* #define SHA1_WIPE_VARS */
 /* #define SHA1_VERBOSE */
 
-#ifndef ALLINONE
+
 #ifdef SHA1_TEST
 #include <stdio.h>
 #endif
+
 #include <string.h>
+#include <stdint.h>
 #include <inttypes.h>
 
-#define EXPORT
-#endif /* ALLINONE */
-
+#include "export.h"
 #include "sha1.h"
 
 #define rol(value, bits) (((value) << (bits)) | ((value) >> (32 - (bits))))
