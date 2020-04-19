@@ -77,11 +77,11 @@ static FILE *open_file(const char *path)
 	/* open and create the file if it doesn't exist already */
 	fd = open(path, O_WRONLY | O_BINARY | O_CREAT | O_EXCL,
 		       S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-	FATAL_IF(fd < 0, "Error creating '%s': %s\n", path, strerror(errno));
+	FATAL_IF(fd < 0, "cannot create '%s': %s\n", path, strerror(errno));
 	
 	/* create the stream from this filedescriptor */
 	f = fdopen(fd, "wb");
-	FATAL_IF(f == NULL, "Error creating stream for '%s': %s\n",
+	FATAL_IF(f == NULL, "cannot create stream for '%s': %s\n",
 		path, strerror(errno));
 
 	return f;
@@ -93,7 +93,7 @@ static FILE *open_file(const char *path)
 static void close_file(FILE *f)
 {
 	/* close the metainfo file */
-	FATAL_IF(fclose(f), "Error closing stream: %s\n", strerror(errno));
+	FATAL_IF(fclose(f), "cannot close stream: %s\n", strerror(errno));
 }
 
 /*

@@ -76,7 +76,7 @@ EXPORT unsigned char *make_hash(struct metafile *m)
 	read_buf = malloc(m->piece_length);
 
 	/* check if we've run out of memory */
-	FATAL_IF0(hash_string == NULL || read_buf == NULL, "Out of memory.\n");
+	FATAL_IF0(hash_string == NULL || read_buf == NULL, "out of memory\n");
 
 	/* initiate pos to point to the beginning of hash_string */
 	pos = hash_string;
@@ -87,7 +87,7 @@ EXPORT unsigned char *make_hash(struct metafile *m)
 
 		/* open the current file for reading */
 		FATAL_IF((fd = open(f->path, OPENFLAGS)) == -1,
-			"Error opening '%s' for reading: %s\n",	f->path, strerror(errno));
+			"cannot open '%s' for reading: %s\n", f->path, strerror(errno));
 		printf("Hashing %s.\n", f->path);
 		fflush(stdout);
 
@@ -97,7 +97,7 @@ EXPORT unsigned char *make_hash(struct metafile *m)
 		   to the end of the file */
 		while (1) {
 			ssize_t d = read(fd, read_buf + r, m->piece_length - r);
-			FATAL_IF(d < 0, "Error reading from '%s': %s\n",
+			FATAL_IF(d < 0, "cannot read from '%s': %s\n",
 				f->path, strerror(errno));
 
 			if (d == 0) /* end of file */
@@ -118,7 +118,7 @@ EXPORT unsigned char *make_hash(struct metafile *m)
 		}
 
 		/* now close the file */
-		FATAL_IF(close(fd), "Error closing '%s': %s\n",
+		FATAL_IF(close(fd), "cannot close '%s': %s\n",
 			f->path, strerror(errno));
 	}
 
@@ -132,8 +132,8 @@ EXPORT unsigned char *make_hash(struct metafile *m)
 #ifndef NO_HASH_CHECK
 	counter += r;
 	FATAL_IF(counter != m->size,
-		"Counted %" PRId64 " bytes, but hashed %" PRId64 " bytes. "
-		"Something is wrong...\n",
+		"counted %" PRId64 " bytes, but hashed %" PRId64 " bytes; "
+		"something is wrong...\n",
 			m->size, counter);
 #endif
 

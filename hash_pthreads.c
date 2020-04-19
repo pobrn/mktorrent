@@ -85,7 +85,7 @@ static struct piece *get_free(struct queue *q, size_t piece_length)
 		q->free = r->next;
 	} else if (q->buffers < q->buffers_max) {
 		r = malloc(sizeof(struct piece) - 1 + piece_length);
-		FATAL_IF0(r == NULL, "Out of memory.\n");
+		FATAL_IF0(r == NULL, "out of memory\n");
 		
 
 		q->buffers++;
@@ -171,7 +171,7 @@ static void *print_progress(void *data)
 	int err;
 
 	err = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
-	FATAL_IF(err, "Error setting thread cancel type: %s\n", strerror(err));
+	FATAL_IF(err, "cannot set thread cancel type: %s\n", strerror(err));
 
 	while (1) {
 		/* print progress and flush the buffer immediately */
@@ -217,12 +217,12 @@ static void read_files(struct metafile *m, struct queue *q, unsigned char *pos)
 
 		/* open the current file for reading */
 		FATAL_IF((fd = open(f->path, OPENFLAGS)) == -1,
-			"Error opening '%s' for reading: %s\n",	f->path, strerror(errno));
+			"cannot open '%s' for reading: %s\n", f->path, strerror(errno));
 
 		while (1) {
 			ssize_t d = read(fd, p->data + r, m->piece_length - r);
 
-			FATAL_IF(d < 0, "Error reading from '%s': %s\n",
+			FATAL_IF(d < 0, "cannot read from '%s': %s\n",
 				f->path, strerror(errno));
 
 			if (d == 0) /* end of file */
@@ -244,7 +244,7 @@ static void read_files(struct metafile *m, struct queue *q, unsigned char *pos)
 		}
 
 		/* now close the file */
-		FATAL_IF(close(fd), "Error closing '%s': %s\n",
+		FATAL_IF(close(fd), "cannot close '%s': %s\n",
 			f->path, strerror(errno));
 	}
 
@@ -259,8 +259,8 @@ static void read_files(struct metafile *m, struct queue *q, unsigned char *pos)
 #ifndef NO_HASH_CHECK
 	counter += r;
 	FATAL_IF(counter != m->size,
-		"Counted %" PRId64 " bytes, but hashed %" PRId64 " bytes. "
-		"Something is wrong...\n",
+		"counted %" PRId64 " bytes, but hashed %" PRId64 " bytes; "
+		"something is wrong...\n",
 			m->size, counter);
 #endif
 }
@@ -283,7 +283,7 @@ EXPORT unsigned char *make_hash(struct metafile *m)
 
 	workers = malloc(m->threads * sizeof(pthread_t));
 	hash_string = malloc(m->pieces * SHA_DIGEST_LENGTH);
-	FATAL_IF0(workers == NULL || hash_string == NULL, "Out of memory.\n");
+	FATAL_IF0(workers == NULL || hash_string == NULL, "out of memory\n");
 
 	q.pieces = m->pieces;
 	q.buffers_max = 3*m->threads;
@@ -291,19 +291,19 @@ EXPORT unsigned char *make_hash(struct metafile *m)
 	/* create worker threads */
 	for (i = 0; i < m->threads; i++) {
 		err = pthread_create(&workers[i], NULL, worker, &q);
-		FATAL_IF(err, "Error creating thread: %s\n", strerror(err));
+		FATAL_IF(err, "cannot create thread: %s\n", strerror(err));
 	}
 
 	/* now set off the progress printer */
 	err = pthread_create(&print_progress_thread, NULL, print_progress, &q);
-	FATAL_IF(err, "Error creating thread: %s\n", strerror(err));
+	FATAL_IF(err, "cannot create thread: %s\n", strerror(err));
 
 	/* read files and feed pieces to the workers */
 	read_files(m, &q, hash_string);
 
 	/* we're done so stop printing our progress. */
 	err = pthread_cancel(print_progress_thread);
-	FATAL_IF(err, "Error cancelling thread: %s\n", strerror(err));
+	FATAL_IF(err, "cannot cancel thread: %s\n", strerror(err));
 
 	/* inform workers we're done */
 	set_done(&q);
@@ -311,14 +311,14 @@ EXPORT unsigned char *make_hash(struct metafile *m)
 	/* wait for workers to finish */
 	for (i = 0; i < m->threads; i++) {
 		err = pthread_join(workers[i], NULL);
-		FATAL_IF(err, "Error joining thread: %s\n", strerror(err));
+		FATAL_IF(err, "cannot join thread: %s\n", strerror(err));
 	}
 
 	free(workers);
 
 	/* the progress printer should be done by now too */
 	err = pthread_join(print_progress_thread, NULL);
-	FATAL_IF(err, "Error joining thread: %s\n", strerror(err));
+	FATAL_IF(err, "cannot join thread: %s\n", strerror(err));
 
 	/* destroy mutexes and condition variables */
 	pthread_mutex_destroy(&q.mutex_full);

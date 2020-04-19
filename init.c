@@ -83,7 +83,7 @@ static void set_absolute_file_path(struct metafile *m)
 	   using getcwd is a bit of a PITA */
 	/* allocate initial string */
 	string = malloc(length);
-	FATAL_IF0(string == NULL, "Out of memory.\n");
+	FATAL_IF0(string == NULL, "out of memory\n");
 	
 	/* while our allocated memory for the working dir isn't big enough */
 	while (getcwd(string, length) == NULL) {
@@ -93,7 +93,7 @@ static void set_absolute_file_path(struct metafile *m)
 		free(string);
 		/* and allocate a new one twice as big muahaha */
 		string = malloc(length);
-		FATAL_IF0(string == NULL, "Out of memory.\n");
+		FATAL_IF0(string == NULL, "out of memory\n");
 	}
 
 	/* now set length to the proper length of the working dir */
@@ -103,14 +103,14 @@ static void set_absolute_file_path(struct metafile *m)
 		/* append <torrent name>.torrent to the working dir */
 		string =
 		    realloc(string, length + strlen(m->torrent_name) + 10);
-		FATAL_IF0(string == NULL, "Out of memory.\n");
+		FATAL_IF0(string == NULL, "out of memory\n");
 		sprintf(string + length, DIRSEP "%s.torrent", m->torrent_name);
 	} else {
 		/* otherwise append the torrent path to the working dir */
 		string =
 		    realloc(string,
 			    length + strlen(m->metainfo_file_path) + 2);
-		FATAL_IF0(string == NULL, "Out of memory.\n");
+		FATAL_IF0(string == NULL, "out of memory\n");
 		sprintf(string + length, DIRSEP "%s", m->metainfo_file_path);
 	}
 
@@ -128,7 +128,7 @@ static slist_t *get_slist(char *s)
 
 	/* allocate memory for the first node in the list */
 	list = last = malloc(sizeof(slist_t));
-	FATAL_IF0(list == NULL, "Out of memory.\n");
+	FATAL_IF0(list == NULL, "out of memory\n");
 
 	/* add URLs to the list while there are commas in the string */
 	while ((e = strchr(s, ','))) {
@@ -143,7 +143,7 @@ static slist_t *get_slist(char *s)
 		/* append another node to the list */
 		last->next = malloc(sizeof(slist_t));
 		last = last->next;
-		FATAL_IF0(last == NULL, "Out of memory.\n");
+		FATAL_IF0(last == NULL, "out of memory\n");
 	}
 
 	/* set the last string in the list */
@@ -163,7 +163,7 @@ static int is_dir(struct metafile *m, char *target)
 	struct stat s;		/* stat structure for stat() to fill */
 
 	/* stat the target */
-	FATAL_IF(stat(target, &s), "Error stat'ing '%s': %s\n",
+	FATAL_IF(stat(target, &s), "cannot stat '%s': %s\n",
 		target, strerror(errno));
 
 	/* if it is a directory, just return 1 */
@@ -177,7 +177,7 @@ static int is_dir(struct metafile *m, char *target)
 	/* since we know the torrent is just a single file and we've
 	   already stat'ed it, we might as well set the file list */
 	m->file_list = malloc(sizeof(flist_t));
-	FATAL_IF0(m->file_list == NULL, "Out of memory.\n");
+	FATAL_IF0(m->file_list == NULL, "out of memory\n");
 	m->file_list->path = target;
 	m->file_list->size = s.st_size;
 	m->file_list->next = NULL;
@@ -229,7 +229,7 @@ static int process_node(const char *path, const struct stat *sb, void *data)
 	new_node = malloc(sizeof(flist_t));
 	if (new_node == NULL ||
 			(new_node->path = strdup(path)) == NULL) {
-		fprintf(stderr, "Out of memory.\n");
+		fprintf(stderr, "fatal error: out of memory\n");
 		return -1;
 	}
 	new_node->size = sb->st_size;
@@ -429,7 +429,7 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 				announce_last = announce_last->next;
 
 			}
-			FATAL_IF0(announce_last == NULL, "Out of memory.\n");
+			FATAL_IF0(announce_last == NULL, "out of memory\n");
 			announce_last->l = get_slist(optarg);
 			break;
 		case 'c':
@@ -477,14 +477,14 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 				web_seed_last = web_seed_last->next;
 			break;
 		case '?':
-			fatal("Use -h for help.\n");
+			fatal("use -h for help.\n");
 		}
 	}
 
 	/* set the correct piece length.
 	   default is 2^18 = 256kb. */
 	FATAL_IF0(m->piece_length < 15 || m->piece_length > 28,
-		"The piece length must be a number between 15 and 28.\n");
+		"the piece length must be a number between 15 and 28.\n");
 	m->piece_length = 1 << m->piece_length;
 
 	if (announce_last != NULL)
@@ -492,13 +492,13 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 
 	/* ..and a file or directory from which to create the torrent */
 	FATAL_IF0(optind >= argc,
-		"Must specify the contents, use -h for help\n");
+		"must specify the contents, use -h for help\n");
 
 #ifdef USE_PTHREADS
 	/* check the number of threads */
 	if (m->threads) {
 		FATAL_IF0(m->threads > 20,
-			"The number of threads is limited to at most 20\n");
+			"the number of threads is limited to at most 20\n");
 	} else {
 #ifdef _SC_NPROCESSORS_ONLN
 		m->threads = sysconf(_SC_NPROCESSORS_ONLN);
@@ -527,7 +527,7 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 	m->target_is_directory = is_dir(m, argv[optind]);
 	if (m->target_is_directory) {
 		/* change to the specified directory */
-		FATAL_IF(chdir(argv[optind]), "Error changing directory to '%s': %s\n",
+		FATAL_IF(chdir(argv[optind]), "cannot change directory to '%s': %s\n",
 			argv[optind], strerror(errno));
 
 		if (file_tree_walk("." DIRSEP, MAX_OPENFD, process_node, m))
