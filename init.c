@@ -36,6 +36,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include "export.h"
 #include "mktorrent.h"
 #include "ftw.h"
+#include "msg.h"
 
 #ifndef MAX_OPENFD
 #define MAX_OPENFD 100	/* Maximum number of file descriptors
@@ -82,10 +83,8 @@ static void set_absolute_file_path(struct metafile *m)
 	   using getcwd is a bit of a PITA */
 	/* allocate initial string */
 	string = malloc(length);
-	if (string == NULL) {
-		fprintf(stderr, "Out of memory.\n");
-		exit(EXIT_FAILURE);
-	}
+	FATAL_IF0(string == NULL, "Out of memory.\n");
+	
 	/* while our allocated memory for the working dir isn't big enough */
 	while (getcwd(string, length) == NULL) {
 		/* double the buffer size */
@@ -94,10 +93,7 @@ static void set_absolute_file_path(struct metafile *m)
 		free(string);
 		/* and allocate a new one twice as big muahaha */
 		string = malloc(length);
-		if (string == NULL) {
-			fprintf(stderr, "Out of memory.\n");
-			exit(EXIT_FAILURE);
-		}
+		FATAL_IF0(string == NULL, "Out of memory.\n");
 	}
 
 	/* now set length to the proper length of the working dir */
@@ -107,20 +103,14 @@ static void set_absolute_file_path(struct metafile *m)
 		/* append <torrent name>.torrent to the working dir */
 		string =
 		    realloc(string, length + strlen(m->torrent_name) + 10);
-		if (string == NULL) {
-			fprintf(stderr, "Out of memory.\n");
-			exit(EXIT_FAILURE);
-		}
+		FATAL_IF0(string == NULL, "Out of memory.\n");
 		sprintf(string + length, DIRSEP "%s.torrent", m->torrent_name);
 	} else {
 		/* otherwise append the torrent path to the working dir */
 		string =
 		    realloc(string,
 			    length + strlen(m->metainfo_file_path) + 2);
-		if (string == NULL) {
-			fprintf(stderr, "Out of memory.\n");
-			exit(EXIT_FAILURE);
-		}
+		FATAL_IF0(string == NULL, "Out of memory.\n");
 		sprintf(string + length, DIRSEP "%s", m->metainfo_file_path);
 	}
 
@@ -138,10 +128,7 @@ static slist_t *get_slist(char *s)
 
 	/* allocate memory for the first node in the list */
 	list = last = malloc(sizeof(slist_t));
-	if (list == NULL) {
-		fprintf(stderr, "Out of memory.\n");
-		exit(EXIT_FAILURE);
-	}
+	FATAL_IF0(list == NULL, "Out of memory.\n");
 
 	/* add URLs to the list while there are commas in the string */
 	while ((e = strchr(s, ','))) {
@@ -156,10 +143,7 @@ static slist_t *get_slist(char *s)
 		/* append another node to the list */
 		last->next = malloc(sizeof(slist_t));
 		last = last->next;
-		if (last == NULL) {
-			fprintf(stderr, "Out of memory.\n");
-			exit(EXIT_FAILURE);
-		}
+		FATAL_IF0(last == NULL, "Out of memory.\n");
 	}
 
 	/* set the last string in the list */
@@ -179,31 +163,21 @@ static int is_dir(struct metafile *m, char *target)
 	struct stat s;		/* stat structure for stat() to fill */
 
 	/* stat the target */
-	if (stat(target, &s)) {
-		fprintf(stderr, "Error stat'ing '%s': %s\n",
-				target, strerror(errno));
-		exit(EXIT_FAILURE);
-	}
+	FATAL_IF(stat(target, &s), "Error stat'ing '%s': %s\n",
+		target, strerror(errno));
 
 	/* if it is a directory, just return 1 */
 	if (S_ISDIR(s.st_mode))
 		return 1;
 
 	/* if it isn't a regular file either, something is wrong.. */
-	if (!S_ISREG(s.st_mode)) {
-		fprintf(stderr,
-			"'%s' is neither a directory nor regular file.\n",
-				target);
-		exit(EXIT_FAILURE);
-	}
-
+	FATAL_IF(!S_ISREG(s.st_mode),
+		"'%s' is neither a directory nor regular file.\n", target);
+		
 	/* since we know the torrent is just a single file and we've
 	   already stat'ed it, we might as well set the file list */
 	m->file_list = malloc(sizeof(flist_t));
-	if (m->file_list == NULL) {
-		fprintf(stderr, "Out of memory.\n");
-		exit(EXIT_FAILURE);
-	}
+	FATAL_IF0(m->file_list == NULL, "Out of memory.\n");
 	m->file_list->path = target;
 	m->file_list->size = s.st_size;
 	m->file_list->next = NULL;
@@ -455,10 +429,7 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 				announce_last = announce_last->next;
 
 			}
-			if (announce_last == NULL) {
-				fprintf(stderr, "Out of memory.\n");
-				exit(EXIT_FAILURE);
-			}
+			FATAL_IF0(announce_last == NULL, "Out of memory.\n");
 			announce_last->l = get_slist(optarg);
 			break;
 		case 'c':
@@ -506,39 +477,28 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 				web_seed_last = web_seed_last->next;
 			break;
 		case '?':
-			fprintf(stderr, "Use -h for help.\n");
-			exit(EXIT_FAILURE);
+			fatal("Use -h for help.\n");
 		}
 	}
 
 	/* set the correct piece length.
 	   default is 2^18 = 256kb. */
-	if (m->piece_length < 15 || m->piece_length > 28) {
-		fprintf(stderr,
-			"The piece length must be a number between "
-			"15 and 28.\n");
-		exit(EXIT_FAILURE);
-	}
+	FATAL_IF0(m->piece_length < 15 || m->piece_length > 28,
+		"The piece length must be a number between 15 and 28.\n");
 	m->piece_length = 1 << m->piece_length;
 
 	if (announce_last != NULL)
 		announce_last->next = NULL;
 
 	/* ..and a file or directory from which to create the torrent */
-	if (optind >= argc) {
-		fprintf(stderr, "Must specify the contents, "
-			"use -h for help\n");
-		exit(EXIT_FAILURE);
-	}
+	FATAL_IF0(optind >= argc,
+		"Must specify the contents, use -h for help\n");
 
 #ifdef USE_PTHREADS
 	/* check the number of threads */
 	if (m->threads) {
-		if (m->threads > 20) {
-			fprintf(stderr, "The number of threads is limited to "
-			                "at most 20\n");
-			exit(EXIT_FAILURE);
-		}
+		FATAL_IF0(m->threads > 20,
+			"The number of threads is limited to at most 20\n");
 	} else {
 #ifdef _SC_NPROCESSORS_ONLN
 		m->threads = sysconf(_SC_NPROCESSORS_ONLN);
@@ -567,11 +527,8 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 	m->target_is_directory = is_dir(m, argv[optind]);
 	if (m->target_is_directory) {
 		/* change to the specified directory */
-		if (chdir(argv[optind])) {
-			fprintf(stderr, "Error changing directory to '%s': %s\n",
-					argv[optind], strerror(errno));
-			exit(EXIT_FAILURE);
-		}
+		FATAL_IF(chdir(argv[optind]), "Error changing directory to '%s': %s\n",
+			argv[optind], strerror(errno));
 
 		if (file_tree_walk("." DIRSEP, MAX_OPENFD, process_node, m))
 			exit(EXIT_FAILURE);
