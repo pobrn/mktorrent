@@ -30,6 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include "init.h"
 #include "hash.h"
 #include "output.h"
+#include "msg.h"
 
 #ifdef ALLINONE
 /* include all .c files in alphabetical order */
@@ -43,6 +44,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #endif
 
 #include "init.c"
+#include "msg.c"
 #include "output.c"
 
 #ifndef USE_OPENSSL
@@ -76,19 +78,12 @@ static FILE *open_file(const char *path)
 	/* open and create the file if it doesn't exist already */
 	fd = open(path, O_WRONLY | O_BINARY | O_CREAT | O_EXCL,
 		       S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-	if (fd < 0) {
-		fprintf(stderr, "Error creating '%s': %s\n",
-				path, strerror(errno));
-		exit(EXIT_FAILURE);
-	}
-
+	FATAL_IF(fd < 0, "cannot create '%s': %s\n", path, strerror(errno));
+	
 	/* create the stream from this filedescriptor */
 	f = fdopen(fd, "wb");
-	if (f == NULL) {
-		fprintf(stderr,	"Error creating stream for '%s': %s\n",
-				path, strerror(errno));
-		exit(EXIT_FAILURE);
-	}
+	FATAL_IF(f == NULL, "cannot create stream for '%s': %s\n",
+		path, strerror(errno));
 
 	return f;
 }
@@ -99,11 +94,7 @@ static FILE *open_file(const char *path)
 static void close_file(FILE *f)
 {
 	/* close the metainfo file */
-	if (fclose(f)) {
-		fprintf(stderr, "Error closing stream: %s\n",
-				strerror(errno));
-		exit(EXIT_FAILURE);
-	}
+	FATAL_IF(fclose(f), "cannot close stream: %s\n", strerror(errno));
 }
 
 /*

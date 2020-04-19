@@ -35,6 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include "export.h"
 #include "mktorrent.h"
 #include "hash.h"
+#include "msg.h"
 
 #ifndef O_BINARY
 #define O_BINARY 0
@@ -75,10 +76,7 @@ EXPORT unsigned char *make_hash(struct metafile *m)
 	read_buf = malloc(m->piece_length);
 
 	/* check if we've run out of memory */
-	if (hash_string == NULL || read_buf == NULL) {
-		fprintf(stderr, "Out of memory.\n");
-		exit(EXIT_FAILURE);
-	}
+	FATAL_IF0(hash_string == NULL || read_buf == NULL, "out of memory\n");
 
 	/* initiate pos to point to the beginning of hash_string */
 	pos = hash_string;
@@ -88,11 +86,8 @@ EXPORT unsigned char *make_hash(struct metafile *m)
 	for (f = m->file_list; f; f = f->next) {
 
 		/* open the current file for reading */
-		if ((fd = open(f->path, OPENFLAGS)) == -1) {
-			fprintf(stderr, "Error opening '%s' for reading: %s\n",
-					f->path, strerror(errno));
-			exit(EXIT_FAILURE);
-		}
+		FATAL_IF((fd = open(f->path, OPENFLAGS)) == -1,
+			"cannot open '%s' for reading: %s\n", f->path, strerror(errno));
 		printf("Hashing %s.\n", f->path);
 		fflush(stdout);
 
@@ -102,12 +97,8 @@ EXPORT unsigned char *make_hash(struct metafile *m)
 		   to the end of the file */
 		while (1) {
 			ssize_t d = read(fd, read_buf + r, m->piece_length - r);
-
-			if (d < 0) {
-				fprintf(stderr, "Error reading from '%s': %s\n",
-						f->path, strerror(errno));
-				exit(EXIT_FAILURE);
-			}
+			FATAL_IF(d < 0, "cannot read from '%s': %s\n",
+				f->path, strerror(errno));
 
 			if (d == 0) /* end of file */
 				break;
@@ -127,11 +118,8 @@ EXPORT unsigned char *make_hash(struct metafile *m)
 		}
 
 		/* now close the file */
-		if (close(fd)) {
-			fprintf(stderr, "Error closing '%s': %s\n",
-					f->path, strerror(errno));
-			exit(EXIT_FAILURE);
-		}
+		FATAL_IF(close(fd), "cannot close '%s': %s\n",
+			f->path, strerror(errno));
 	}
 
 	/* finally append the hash of the last irregular piece to the hash string */
@@ -143,12 +131,10 @@ EXPORT unsigned char *make_hash(struct metafile *m)
 
 #ifndef NO_HASH_CHECK
 	counter += r;
-	if (counter != m->size) {
-		fprintf(stderr, "Counted %" PRId64 " bytes, "
-				"but hashed %" PRId64 " bytes. "
-				"Something is wrong...\n", m->size, counter);
-		exit(EXIT_FAILURE);
-	}
+	FATAL_IF(counter != m->size,
+		"counted %" PRId64 " bytes, but hashed %" PRId64 " bytes; "
+		"something is wrong...\n",
+			m->size, counter);
 #endif
 
 	/* free the read buffer before we return */
