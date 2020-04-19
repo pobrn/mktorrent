@@ -21,10 +21,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <stdlib.h>
 #include <stdarg.h>
 
+#include "export.h"
 #include "msg.h"
 
 
-void fatal(const char *format, ...)
+EXPORT void fatal(const char *format, ...)
 {
 
 	va_list args;
