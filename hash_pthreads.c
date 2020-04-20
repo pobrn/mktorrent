@@ -203,7 +203,6 @@ static void *worker(void *data)
 static void read_files(struct metafile *m, struct queue *q, unsigned char *pos)
 {
 	int fd;              /* file descriptor */
-	flist_t *f;          /* pointer to a place in the file list */
 	size_t r = 0;        /* number of bytes read from file(s)
 	                        into the read buffer */
 #ifndef NO_HASH_CHECK
@@ -213,7 +212,8 @@ static void read_files(struct metafile *m, struct queue *q, unsigned char *pos)
 	struct piece *p = get_free(q, m->piece_length);
 
 	/* go through all the files in the file list */
-	for (f = m->file_list; f; f = f->next) {
+	LL_FOR(file_node, m->file_list) {
+		struct file_data *f = LL_DATA_AS(file_node, struct file_data*);
 
 		/* open the current file for reading */
 		FATAL_IF((fd = open(f->path, OPENFLAGS)) == -1,

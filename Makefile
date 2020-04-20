@@ -66,4 +66,4 @@ program = mktorrent
 version = 1.1
 
 HEADERS  = mktorrent.h
-SRCS     = ftw.c init.c sha1.c hash.c output.c main.c msg.c
+SRCS     = ftw.c init.c sha1.c hash.c output.c main.c msg.c ll.c

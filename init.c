@@ -121,13 +121,12 @@ static void set_absolute_file_path(struct metafile *m)
  * parse a comma separated list of strings <str>[,<str>]* and
  * return a string list containing the substrings
  */
-static slist_t *get_slist(char *s)
+static struct ll *get_slist(char *s)
 {
-	slist_t *list, *last;
 	char *e;
 
-	/* allocate memory for the first node in the list */
-	list = last = malloc(sizeof(slist_t));
+	/* allocate a new list */
+	struct ll *list = ll_new();
 	FATAL_IF0(list == NULL, "out of memory\n");
 
 	/* add URLs to the list while there are commas in the string */
@@ -135,20 +134,15 @@ static slist_t *get_slist(char *s)
 		/* set the commas to \0 so the URLs appear as
 		 * separate strings */
 		*e = '\0';
-		last->s = s;
+		
+		FATAL_IF0(ll_append(list, s, 0) == NULL, "out of memory\n");
 
 		/* move s to point to the next URL */
 		s = e + 1;
-
-		/* append another node to the list */
-		last->next = malloc(sizeof(slist_t));
-		last = last->next;
-		FATAL_IF0(last == NULL, "out of memory\n");
 	}
 
 	/* set the last string in the list */
-	last->s = s;
-	last->next = NULL;
+	FATAL_IF0(ll_append(list, s, 0) == NULL, "out of memory\n");
 
 	/* return the list */
 	return list;
@@ -176,11 +170,15 @@ static int is_dir(struct metafile *m, char *target)
 		
 	/* since we know the torrent is just a single file and we've
 	   already stat'ed it, we might as well set the file list */
-	m->file_list = malloc(sizeof(flist_t));
-	FATAL_IF0(m->file_list == NULL, "out of memory\n");
-	m->file_list->path = target;
-	m->file_list->size = s.st_size;
-	m->file_list->next = NULL;
+	struct file_data fd = {
+		strdup(target),
+		s.st_size
+	};
+	
+	FATAL_IF0(
+		fd.path == NULL || ll_append(m->file_list, &fd, sizeof(fd)) == NULL,
+		"out of memory\n");
+	
 	/* ..and size variable */
 	m->size = s.st_size;
 
@@ -195,8 +193,6 @@ static int is_dir(struct metafile *m, char *target)
  */
 static int process_node(const char *path, const struct stat *sb, void *data)
 {
-	flist_t **p;            /* pointer to a node in the file list */
-	flist_t *new_node;      /* place to store a newly created node */
 	struct metafile *m = data;
 
 	/* skip non-regular files */
@@ -219,28 +215,17 @@ static int process_node(const char *path, const struct stat *sb, void *data)
 	/* count the total size of the files */
 	m->size += sb->st_size;
 
-	/* find where to insert the new node so that the file list
-	   remains ordered by the path */
-	p = &m->file_list;
-	while (*p && strcmp(path, (*p)->path) > 0)
-		p = &((*p)->next);
-
 	/* create a new file list node for the file */
-	new_node = malloc(sizeof(flist_t));
-	if (new_node == NULL ||
-			(new_node->path = strdup(path)) == NULL) {
+	struct file_data fd = {
+		strdup(path),
+		sb->st_size
+	};
+	
+	if (fd.path == NULL || ll_append(m->file_list, &fd, sizeof(fd)) == NULL) {
 		fprintf(stderr, "fatal error: out of memory\n");
 		return -1;
 	}
-	new_node->size = sb->st_size;
 
-	/* now insert the node there */
-	new_node->next = *p;
-	*p = new_node;
-
-	/* insertion sort is a really stupid way of sorting a list,
-	   but usually a torrent doesn't contain too many files,
-	   so we'll probably be alright ;) */
 	return 0;
 }
 
@@ -302,34 +287,41 @@ static void print_help()
 /*
  * print the full announce list
  */
-static void print_announce_list(llist_t *list)
+static void print_announce_list(struct ll *list)
 {
-	unsigned int n;
-
-	for (n = 1; list; list = list->next, n++) {
-		slist_t *l = list->l;
-
-		printf("    %u : %s\n", n, l->s);
-		for (l = l->next; l; l = l->next)
-			printf("        %s\n", l->s);
+	unsigned int tier = 1;
+	
+	LL_FOR(node, list) {
+		
+		struct ll *inner_list = LL_DATA(node);	
+		
+		printf("    %u : %s\n",
+			tier, LL_DATA_AS(LL_HEAD(inner_list), const char*));
+		
+		LL_FOR_FROM(inner_node, LL_NEXT(LL_HEAD(inner_list))) {
+			printf("        %s\n", LL_DATA_AS(inner_node, const char*));
+		}
+		
+		tier += 1;
 	}
 }
 
 /*
  * print the list of web seed URLs
  */
-static void print_web_seed_list(slist_t *list)
+static void print_web_seed_list(struct ll *list)
 {
 	printf("  Web Seed URL: ");
 
-	if (list == NULL) {
+	if (LL_IS_EMPTY(list)) {
 		printf("none\n");
 		return;
 	}
-
-	printf("%s\n", list->s);
-	for (list = list->next; list; list = list->next)
-		printf("                %s\n", list->s);
+	
+	printf("%s\n", LL_DATA_AS(LL_HEAD(list), const char*));
+	LL_FOR_FROM(node, LL_NEXT(LL_HEAD(list))) {
+		printf("                %s\n", LL_DATA_AS(node, const char*));
+	}
 }
 
 /*
@@ -374,6 +366,24 @@ static void dump_options(struct metafile *m)
 		printf("\"%s\"\n\n", m->comment);
 }
 
+static int file_data_cmp_by_name(const void *a, const void *b)
+{
+	const struct file_data *x = a, *y = b;
+	return strcmp(x->path, y->path);
+}
+
+static void file_data_clear(void *data)
+{
+	struct file_data *fd = data;
+	free(fd->path);
+}
+
+static void free_inner_list(void *data)
+{
+	struct ll *list = data;
+	ll_free(list, NULL);
+}
+
 /*
  * parse and check the command line options given
  * and fill out the appropriate fields of the
@@ -382,8 +392,6 @@ static void dump_options(struct metafile *m)
 EXPORT void init(struct metafile *m, int argc, char *argv[])
 {
 	int c;			/* return value of getopt() */
-	llist_t *announce_last = NULL;
-	slist_t *web_seed_last = NULL;
 #ifdef USE_LONG_OPTIONS
 	/* the option structure to pass to getopt_long() */
 	static struct option long_options[] = {
@@ -405,6 +413,15 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 	};
 #endif
 
+	m->announce_list = ll_new();
+	FATAL_IF0(m->announce_list == NULL, "out of memory\n");
+	
+	m->web_seed_list = ll_new();
+	FATAL_IF0(m->web_seed_list == NULL, "out of memory\n");
+	
+	m->file_list = ll_new();
+	FATAL_IF0(m->file_list == NULL, "out of memory\n");
+
 	/* now parse the command line options given */
 #ifdef USE_PTHREADS
 #define OPT_STRING "a:c:dhl:n:o:ps:t:vw:"
@@ -420,17 +437,9 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 #undef OPT_STRING
 		switch (c) {
 		case 'a':
-			if (announce_last == NULL) {
-				m->announce_list = announce_last =
-					malloc(sizeof(llist_t));
-			} else {
-				announce_last->next =
-					malloc(sizeof(llist_t));
-				announce_last = announce_last->next;
-
-			}
-			FATAL_IF0(announce_last == NULL, "out of memory\n");
-			announce_last->l = get_slist(optarg);
+			FATAL_IF0(
+				ll_append(m->announce_list, get_slist(optarg), 0) == NULL,
+				"out of memory\n");
 			break;
 		case 'c':
 			m->comment = optarg;
@@ -465,16 +474,7 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 			m->verbose = 1;
 			break;
 		case 'w':
-			if (web_seed_last == NULL) {
-				m->web_seed_list = web_seed_last =
-					get_slist(optarg);
-			} else {
-				web_seed_last->next =
-					get_slist(optarg);
-				web_seed_last = web_seed_last->next;
-			}
-			while (web_seed_last->next)
-				web_seed_last = web_seed_last->next;
+			ll_extend(m->web_seed_list, get_slist(optarg));
 			break;
 		case '?':
 			fatal("use -h for help.\n");
@@ -486,9 +486,6 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 	FATAL_IF0(m->piece_length < 15 || m->piece_length > 28,
 		"the piece length must be a number between 15 and 28.\n");
 	m->piece_length = 1 << m->piece_length;
-
-	if (announce_last != NULL)
-		announce_last->next = NULL;
 
 	/* ..and a file or directory from which to create the torrent */
 	FATAL_IF0(optind >= argc,
@@ -533,6 +530,8 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 		if (file_tree_walk("." DIRSEP, MAX_OPENFD, process_node, m))
 			exit(EXIT_FAILURE);
 	}
+	
+	ll_sort(m->file_list, file_data_cmp_by_name);
 
 	/* calculate the number of pieces
 	   pieces = ceil( size / piece_length ) */
@@ -543,4 +542,13 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 		printf("\n%" PRIoff " bytes in all.\n"
 			"That's %u pieces of %u bytes each.\n\n",
 			m->size, m->pieces, m->piece_length);
+}
+
+EXPORT void cleanup_metafile(struct metafile *m)
+{
+	ll_free(m->announce_list, free_inner_list);
+	
+	ll_free(m->file_list, file_data_clear);
+	
+	ll_free(m->web_seed_list, NULL);
 }

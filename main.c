@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include "hash.h"
 #include "output.h"
 #include "msg.h"
+#include "ll.h"
 
 #ifdef ALLINONE
 /* include all .c files in alphabetical order */
@@ -44,6 +45,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #endif
 
 #include "init.c"
+#include "ll.c"
 #include "msg.c"
 #include "output.c"
 
@@ -141,6 +143,9 @@ int main(int argc, char *argv[])
 
 	/* close the file stream */
 	close_file(file);
+	
+	/* free allocated memory */
+	cleanup_metafile(&m);
 
 	/* yeih! everything seemed to go as planned */
 	return EXIT_SUCCESS;
