@@ -551,4 +551,6 @@ EXPORT void cleanup_metafile(struct metafile *m)
 	ll_free(m->file_list, file_data_clear);
 	
 	ll_free(m->web_seed_list, NULL);
+	
+	free(m->metainfo_file_path);
 }

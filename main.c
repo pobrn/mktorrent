@@ -138,14 +138,18 @@ int main(int argc, char *argv[])
 	   _after_ we did all the hashing in case we fail */
 	file = open_file(m.metainfo_file_path);
 
-	/* calculate hash string and write the metainfo to file */
-	write_metainfo(file, &m, make_hash(&m));
+	/* calculate hash string... */
+	unsigned char *hash = make_hash(&m);
 
+	/* and write the metainfo to file */
+	write_metainfo(file, &m, hash);
+	
 	/* close the file stream */
 	close_file(file);
 	
 	/* free allocated memory */
 	cleanup_metafile(&m);
+	free(hash);
 
 	/* yeih! everything seemed to go as planned */
 	return EXIT_SUCCESS;
