@@ -36,6 +36,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include "mktorrent.h"
 #include "hash.h"
 #include "msg.h"
+#include "ll.h"
 
 #ifndef O_BINARY
 #define O_BINARY 0
@@ -56,7 +57,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 EXPORT unsigned char *make_hash(struct metafile *m)
 {
-	flist_t *f;                     /* pointer to a place in the file list */
 	unsigned char *hash_string;     /* the hash string */
 	unsigned char *pos;             /* position in the hash string */
 	unsigned char *read_buf;        /* read buffer */
@@ -83,8 +83,9 @@ EXPORT unsigned char *make_hash(struct metafile *m)
 	/* and initiate r to 0 since we haven't read anything yet */
 	r = 0;
 	/* go through all the files in the file list */
-	for (f = m->file_list; f; f = f->next) {
-
+	LL_FOR(file_node, m->file_list) {
+		struct file_data *f = LL_DATA_AS(file_node, struct file_data*);
+		
 		/* open the current file for reading */
 		FATAL_IF((fd = open(f->path, OPENFLAGS)) == -1,
 			"cannot open '%s' for reading: %s\n", f->path, strerror(errno));
