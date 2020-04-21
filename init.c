@@ -76,8 +76,15 @@ static void set_absolute_file_path(struct metafile *m)
 
 	/* if the file_path is already an absolute path just
 	   return that */
-	if (m->metainfo_file_path && *m->metainfo_file_path == DIRSEP_CHAR)
+	if (m->metainfo_file_path && *m->metainfo_file_path == DIRSEP_CHAR) {
+		/* we need to reallocate the string, because we want to be able to
+		 * free() it in cleanup_metafile(), and that would not be possible
+		 * if m->metainfo_file_path pointed to a string from argv[]
+		 */
+		m->metainfo_file_path = strdup(m->metainfo_file_path);
+		FATAL_IF0(m->metainfo_file_path == NULL, "out of memory\n");
 		return;
+	}
 
 	/* first get the current working directory
 	   using getcwd is a bit of a PITA */
