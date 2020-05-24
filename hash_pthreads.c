@@ -202,12 +202,12 @@ static void *worker(void *data)
 
 static void read_files(struct metafile *m, struct queue *q, unsigned char *pos)
 {
-	int fd;              /* file descriptor */
-	size_t r = 0;        /* number of bytes read from file(s)
-	                        into the read buffer */
+	int fd;                /* file descriptor */
+	size_t r = 0;          /* number of bytes read from file(s)
+	                          into the read buffer */
 #ifndef NO_HASH_CHECK
-	int64_t counter = 0;	/* number of bytes hashed
-				   should match size when done */
+	uintmax_t counter = 0; /* number of bytes hashed
+	                          should match size when done */
 #endif
 	struct piece *p = get_free(q, m->piece_length);
 
@@ -259,7 +259,7 @@ static void read_files(struct metafile *m, struct queue *q, unsigned char *pos)
 #ifndef NO_HASH_CHECK
 	counter += r;
 	FATAL_IF(counter != m->size,
-		"counted %" PRId64 " bytes, but hashed %" PRId64 " bytes; "
+		"counted %" PRIuMAX " bytes, but hashed %" PRIuMAX " bytes; "
 		"something is wrong...\n",
 			m->size, counter);
 #endif
@@ -330,7 +330,7 @@ EXPORT unsigned char *make_hash(struct metafile *m)
 	free_buffers(&q);
 
 	/* ok, let the user know we're done too */
-	printf("\rHashed %u of %u pieces.\n", q.pieces_hashed, q.pieces);
+	printf("\rhashed %u of %u pieces\n", q.pieces_hashed, q.pieces);
 
 	return hash_string;
 }

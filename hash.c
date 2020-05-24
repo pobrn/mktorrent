@@ -65,7 +65,7 @@ EXPORT unsigned char *make_hash(struct metafile *m)
 	                                   the read buffer */
 	SHA_CTX c;                      /* SHA1 hashing context */
 #ifndef NO_HASH_CHECK
-	int64_t counter = 0;            /* number of bytes hashed
+	uintmax_t counter = 0;          /* number of bytes hashed
 	                                   should match size when done */
 #endif
 
@@ -89,7 +89,7 @@ EXPORT unsigned char *make_hash(struct metafile *m)
 		/* open the current file for reading */
 		FATAL_IF((fd = open(f->path, OPENFLAGS)) == -1,
 			"cannot open '%s' for reading: %s\n", f->path, strerror(errno));
-		printf("Hashing %s.\n", f->path);
+		printf("hashing %s\n", f->path);
 		fflush(stdout);
 
 		/* fill the read buffer with the contents of the file and append
@@ -133,7 +133,7 @@ EXPORT unsigned char *make_hash(struct metafile *m)
 #ifndef NO_HASH_CHECK
 	counter += r;
 	FATAL_IF(counter != m->size,
-		"counted %" PRId64 " bytes, but hashed %" PRId64 " bytes; "
+		"counted %" PRIuMAX " bytes, but hashed %" PRIuMAX " bytes; "
 		"something is wrong...\n",
 			m->size, counter);
 #endif

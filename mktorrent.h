@@ -9,11 +9,14 @@
 #define DIRSEP_CHAR '/'
 #endif
 
+
+#include <stdint.h>
+
 #include "ll.h"
 
 struct file_data {
 	char *path;
-	int64_t size;
+	uintmax_t size;
 };
 
 struct metafile {
@@ -34,7 +37,7 @@ struct metafile {
 #endif
 
 	/* information calculated by read_dir() */
-	int64_t size;              /* combined size of all files */
+	uintmax_t size;              /* combined size of all files */
 	struct ll *file_list;      /* list of files and their sizes */
 	unsigned int pieces;       /* number of pieces */
 };

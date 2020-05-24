@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <stdio.h>        /* fprintf() etc. */
 #include <string.h>       /* strlen() etc. */
 #include <time.h>         /* time() */
+#include <inttypes.h>     /* PRIuMAX */
 
 #ifdef USE_OPENSSL
 #include <openssl/sha.h>  /* SHA_DIGEST_LENGTH */
@@ -77,7 +78,7 @@ static void write_file_list(FILE *f, struct ll *list)
 		/* the file list contains a dictionary for every file
 		   with entries for the length and path
 		   write the length first */
-		fprintf(f, "d6:lengthi%" PRIoff "e4:pathl", fd->size);
+		fprintf(f, "d6:lengthi%" PRIuMAX "e4:pathl", fd->size);
 		/* the file path is written as a list of subdirectories
 		   and the last entry is the filename
 		   sorry this code is even uglier than the rest */
@@ -128,7 +129,7 @@ static void write_web_seed_list(FILE *f, struct ll *list)
 EXPORT void write_metainfo(FILE *f, struct metafile *m, unsigned char *hash_string)
 {
 	/* let the user know we've started writing the metainfo file */
-	printf("Writing metainfo file... ");
+	printf("writing metainfo file... ");
 	fflush(stdout);
 
 	/* every metainfo file is one big dictonary */
@@ -173,7 +174,7 @@ EXPORT void write_metainfo(FILE *f, struct metafile *m, unsigned char *hash_stri
 	/* first entry is either 'length', which specifies the length of a
 	   single file torrent, or a list of files and their respective sizes */
 	if (!m->target_is_directory)
-		fprintf(f, "6:lengthi%" PRIoff "e",
+		fprintf(f, "6:lengthi%" PRIuMAX "e",
 			LL_DATA_AS(LL_HEAD(m->file_list), struct file_data*)->size);
 	else
 		write_file_list(f, m->file_list);
@@ -212,6 +213,6 @@ EXPORT void write_metainfo(FILE *f, struct metafile *m, unsigned char *hash_stri
 	fprintf(f, "e");
 
 	/* let the user know we're done already */
-	printf("done.\n");
+	printf("done\n");
 	fflush(stdout);
 }
