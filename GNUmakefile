@@ -54,13 +54,11 @@ ifdef DEBUG
 DEFINES += -DDEBUG
 endif
 
-OFFPRFX = $(shell ./prefix)
-
 OBJS = $(SRCS:.c=.o)
 
 all: $(program)
 
-%.o: %.c $(HEADERS) prefix
-	$(CC) $(CFLAGS) $(DEFINES) -DPRIoff="\"$(OFFPRFX)d\"" -DVERSION="\"$(version)\"" -c $<
+%.o: %.c $(HEADERS)
+	$(CC) $(CFLAGS) $(DEFINES) -DVERSION="\"$(version)\"" -c $<
 
 include rules.mk
