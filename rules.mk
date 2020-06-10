@@ -17,14 +17,11 @@
 
 .PHONY: strip indent clean install uninstall
 
-prefix: prefix.c
-	$(CC) $(CFLAGS) $(DEFINES) $(LDFLAGS) $< -o $@
-
 $(program): $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o $(program) $(LDFLAGS) $(LIBS)
 
-allinone: $(SRCS) $(HEADERS) prefix
-	$(CC) $(CFLAGS) $(DEFINES) -DPRIoff="\"`./prefix`d\"" -DVERSION="\"$(version)\"" -DALLINONE main.c -o $(program) $(LDFLAGS) $(LIBS)
+allinone: $(SRCS) $(HEADERS)
+	$(CC) $(CFLAGS) $(DEFINES) -DVERSION="\"$(version)\"" -DALLINONE main.c -o $(program) $(LDFLAGS) $(LIBS)
 
 strip:
 	strip $(program)
@@ -33,7 +30,7 @@ indent:
 	indent -kr -i8 *.c *.h
 
 clean:
-	rm -f $(program) prefix *.o *.c~ *.h~
+	rm -f $(program) *.o *.c~ *.h~
 
 install: $(program)
 	$(INSTALL) -d $(DESTDIR)$(PREFIX)/bin

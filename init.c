@@ -173,13 +173,16 @@ static int is_dir(struct metafile *m, char *target)
 
 	/* if it isn't a regular file either, something is wrong.. */
 	FATAL_IF(!S_ISREG(s.st_mode),
-		"'%s' is neither a directory nor regular file.\n", target);
-		
+		"'%s' is neither a directory nor regular file\n", target);
+
+	/* if it has negative size, something it wrong */
+	FATAL_IF(s.st_size < 0, "'%s' has negative size\n", target);
+
 	/* since we know the torrent is just a single file and we've
 	   already stat'ed it, we might as well set the file list */
 	struct file_data fd = {
 		strdup(target),
-		s.st_size
+		(uintmax_t) s.st_size
 	};
 	
 	FATAL_IF0(
@@ -187,7 +190,7 @@ static int is_dir(struct metafile *m, char *target)
 		"out of memory\n");
 	
 	/* ..and size variable */
-	m->size = s.st_size;
+	m->size = (uintmax_t) s.st_size;
 
 	/* now return 0 since it isn't a directory */
 	return 0;
@@ -212,22 +215,27 @@ static int process_node(const char *path, const struct stat *sb, void *data)
 	/* now path should be readable otherwise
 	 * display a warning and skip it */
 	if (access(path, R_OK)) {
-		fprintf(stderr, "Warning: Cannot read '%s', skipping.\n", path);
+		fprintf(stderr, "warning: cannot read '%s', skipping\n", path);
+		return 0;
+	}
+
+	if (sb->st_size < 0) {
+		fprintf(stderr, "warning: '%s' has negative size, skipping\n", path);
 		return 0;
 	}
 
 	if (m->verbose)
-		printf("Adding %s\n", path);
+		printf("adding %s\n", path);
 
 	/* count the total size of the files */
-	m->size += sb->st_size;
+	m->size += (uintmax_t) sb->st_size;
 
 	/* create a new file list node for the file */
 	struct file_data fd = {
 		strdup(path),
-		sb->st_size
+		(uintmax_t) sb->st_size
 	};
-	
+
 	if (fd.path == NULL || ll_append(m->file_list, &fd, sizeof(fd)) == NULL) {
 		fprintf(stderr, "fatal error: out of memory\n");
 		return -1;
@@ -546,8 +554,8 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 
 	/* now print the size and piece count if we should be verbose */
 	if (m->verbose)
-		printf("\n%" PRIoff " bytes in all.\n"
-			"That's %u pieces of %u bytes each.\n\n",
+		printf("\n%" PRIuMAX " bytes in all\n"
+			"that's %u pieces of %u bytes each\n\n",
 			m->size, m->pieces, m->piece_length);
 }
 
