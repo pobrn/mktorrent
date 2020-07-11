@@ -47,16 +47,16 @@ static void write_announce_list(FILE *f, struct ll *list)
 
 		/* .. and print the lists */
 		fprintf(f, "l");
-		
+
 		LL_FOR(announce_url_node, LL_DATA_AS(tier_node, struct ll*)) {
-			
+
 			const char *announce_url =
 				LL_DATA_AS(announce_url_node, const char*);
-		
+
 			fprintf(f, "%lu:%s",
 					(unsigned long) strlen(announce_url), announce_url);
 		}
-			
+
 		fprintf(f, "e");
 	}
 	fprintf(f, "e");
@@ -74,7 +74,7 @@ static void write_file_list(FILE *f, struct ll *list)
 	/* go through all the files */
 	LL_FOR(file_node, list) {
 		struct file_data *fd = LL_DATA_AS(file_node, struct file_data*);
-	
+
 		/* the file list contains a dictionary for every file
 		   with entries for the length and path
 		   write the length first */
@@ -117,7 +117,7 @@ static void write_web_seed_list(FILE *f, struct ll *list)
 		const char *web_seed_url = LL_DATA_AS(node, const char*);
 		fprintf(f, "%lu:%s",
 			(unsigned long) strlen(web_seed_url), web_seed_url);
-	} 
+	}
 	/* end the list */
 	fprintf(f, "e");
 }
@@ -136,17 +136,17 @@ EXPORT void write_metainfo(FILE *f, struct metafile *m, unsigned char *hash_stri
 	fprintf(f, "d");
 
 	if (!LL_IS_EMPTY(m->announce_list)) {
-	
+
 		struct ll *first_tier =
 			LL_DATA_AS(LL_HEAD(m->announce_list), struct ll*);
-			
+
 		/* write the announce URL */
 		const char *first_announce_url
 			= LL_DATA_AS(LL_HEAD(first_tier), const char*);
-		
+
 		fprintf(f, "8:announce%lu:%s",
 			(unsigned long) strlen(first_announce_url), first_announce_url);
-			
+
 		/* write the announce-list entry if we have
 		 * more than one announce URL, namely
 		 * a) there are at least two tiers, or      (first part of OR)
@@ -202,7 +202,7 @@ EXPORT void write_metainfo(FILE *f, struct metafile *m, unsigned char *hash_stri
 		if (LL_IS_SINGLETON(m->web_seed_list)) {
 			const char *first_web_seed =
 				LL_DATA_AS(LL_HEAD(m->web_seed_list), const char*);
-				
+
 			fprintf(f, "8:url-list%lu:%s",
 					(unsigned long) strlen(first_web_seed), first_web_seed);
 		} else

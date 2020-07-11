@@ -85,7 +85,7 @@ EXPORT unsigned char *make_hash(struct metafile *m)
 	/* go through all the files in the file list */
 	LL_FOR(file_node, m->file_list) {
 		struct file_data *f = LL_DATA_AS(file_node, struct file_data*);
-		
+
 		/* open the current file for reading */
 		FATAL_IF((fd = open(f->path, OPENFLAGS)) == -1,
 			"cannot open '%s' for reading: %s\n", f->path, strerror(errno));

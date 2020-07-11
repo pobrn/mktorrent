@@ -3,7 +3,7 @@
 
 struct ll_node {
     struct ll_node *prev, *next;
-    
+
     size_t data_size;
     void *data;
 };
@@ -44,7 +44,7 @@ EXPORT struct ll *ll_new(void);
 EXPORT void ll_free(struct ll *, ll_node_data_destructor);
 
 
-/* appends a new node with data to the end of the given list, 
+/* appends a new node with data to the end of the given list,
  * if the provided size is zero, then the data pointer is set to
  * the pointer provided in the arguments, otherwise size number of
  * "bytes" is allocated, and that amount of bytes is copied into
