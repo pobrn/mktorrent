@@ -257,6 +257,7 @@ static void print_help()
 	  "                                additional -a adds backup trackers\n"
 	  "-c, --comment=<comment>       : add a comment to the metainfo\n"
 	  "-d, --no-date                 : don't write the creation date\n"
+	  "-f, --force                   : overwrite output file if it exists\n"
 	  "-h, --help                    : show this help screen\n"
 	  "-l, --piece-length=<n>        : set the piece length to 2^n bytes,\n"
 	  "                                default is 18, that is 2^18 = 256kb\n"
@@ -278,6 +279,7 @@ static void print_help()
 	  "                    additional -a adds backup trackers\n"
 	  "-c <comment>      : add a comment to the metainfo\n"
 	  "-d                : don't write the creation date\n"
+	  "-f                : overwrite output file if it exists\n"
 	  "-h                : show this help screen\n"
 	  "-l <n>            : set the piece length to 2^n bytes,\n"
 	  "                    default is 18, that is 2^18 = 256kb\n"
@@ -413,6 +415,7 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 		{"announce", 1, NULL, 'a'},
 		{"comment", 1, NULL, 'c'},
 		{"no-date", 0, NULL, 'd'},
+		{"force", 0, NULL, 'f'},
 		{"help", 0, NULL, 'h'},
 		{"piece-length", 1, NULL, 'l'},
 		{"name", 1, NULL, 'n'},
@@ -439,9 +442,9 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 
 	/* now parse the command line options given */
 #ifdef USE_PTHREADS
-#define OPT_STRING "a:c:dhl:n:o:ps:t:vw:"
+#define OPT_STRING "a:c:dfhl:n:o:ps:t:vw:"
 #else
-#define OPT_STRING "a:c:dhl:n:o:ps:vw:"
+#define OPT_STRING "a:c:dfhl:n:o:ps:vw:"
 #endif
 #ifdef USE_LONG_OPTIONS
 	while ((c = getopt_long(argc, argv, OPT_STRING,
@@ -461,6 +464,9 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 			break;
 		case 'd':
 			m->no_creation_date = 1;
+			break;
+		case 'f':
+			m->force_overwrite = 1;
 			break;
 		case 'h':
 			print_help();

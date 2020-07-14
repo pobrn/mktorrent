@@ -32,6 +32,7 @@ struct metafile {
 	int private;               /* set the private flag */
 	char *source;              /* set source for private trackers */
 	int verbose;               /* be verbose */
+	int force_overwrite;       /* overwrite existing output file */
 #ifdef USE_PTHREADS
 	long threads;              /* number of threads used for hashing */
 #endif
