@@ -18,12 +18,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
 
 
-#include <stdlib.h>      /* exit() */
+#include <stdlib.h>      /* exit(), srandom() */
 #include <errno.h>       /* errno */
 #include <string.h>      /* strerror() */
 #include <stdio.h>       /* printf() etc. */
 #include <sys/stat.h>    /* S_IRUSR, S_IWUSR, S_IRGRP, S_IROTH */
 #include <fcntl.h>       /* open() */
+#include <time.h>        /* clock_gettime() */
 
 #include "export.h"
 #include "mktorrent.h"
@@ -121,6 +122,7 @@ int main(int argc, char *argv[])
 		0,    /* no_creation_date */
 		0,    /* private */
 		NULL, /* source string */
+		0,    /* cross_seed */
 		0,    /* verbose */
 		0,    /* force_overwrite */
 #ifdef USE_PTHREADS
@@ -135,6 +137,12 @@ int main(int argc, char *argv[])
 
 	/* print who we are */
 	printf("mktorrent " VERSION " (c) 2007, 2009 Emil Renner Berthing\n\n");
+
+	/* seed PRNG with current time */
+	struct timespec ts;
+	FATAL_IF(clock_gettime(CLOCK_REALTIME, &ts) == -1,
+		"failed to get time: %s\n", strerror(errno));
+	srandom(ts.tv_nsec ^ ts.tv_sec);
 
 	/* process options */
 	init(&m, argc, argv);

@@ -274,6 +274,7 @@ static void print_help()
 	  "-v, --verbose                 : be verbose\n"
 	  "-w, --web-seed=<url>[,<url>]* : add web seed URLs\n"
 	  "                                additional -w adds more URLs\n"
+	  "-x, --cross-seed              : ensure info hash is unique for easier cross-seeding\n"
 #else
 	  "-a <url>[,<url>]* : specify the full announce URLs\n"
 	  "                    additional -a adds backup trackers\n"
@@ -296,6 +297,7 @@ static void print_help()
 	  "-v                : be verbose\n"
 	  "-w <url>[,<url>]* : add web seed URLs\n"
 	  "                    additional -w adds more URLs\n"
+	  "-x                : ensure info hash is unique for easier cross-seeding\n"
 #endif
 	  "\nPlease send bug reports, patches, feature requests, praise and\n"
 	  "general gossip about the program to: mktorrent@rudde.org\n");
@@ -427,6 +429,7 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 #endif
 		{"verbose", 0, NULL, 'v'},
 		{"web-seed", 1, NULL, 'w'},
+		{"cross-seed", 0, NULL, 'x'},
 		{NULL, 0, NULL, 0}
 	};
 #endif
@@ -442,9 +445,9 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 
 	/* now parse the command line options given */
 #ifdef USE_PTHREADS
-#define OPT_STRING "a:c:dfhl:n:o:ps:t:vw:"
+#define OPT_STRING "a:c:dfhl:n:o:ps:t:vw:x"
 #else
-#define OPT_STRING "a:c:dfhl:n:o:ps:vw:"
+#define OPT_STRING "a:c:dfhl:n:o:ps:vw:x"
 #endif
 #ifdef USE_LONG_OPTIONS
 	while ((c = getopt_long(argc, argv, OPT_STRING,
@@ -496,6 +499,9 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 			break;
 		case 'w':
 			ll_extend(m->web_seed_list, get_slist(optarg));
+			break;
+		case 'x':
+			m->cross_seed = 1;
 			break;
 		case '?':
 			fatal("use -h for help.\n");
