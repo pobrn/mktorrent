@@ -86,7 +86,7 @@ static struct piece *get_free(struct queue *q, size_t piece_length)
 	} else if (q->buffers < q->buffers_max) {
 		r = malloc(sizeof(struct piece) - 1 + piece_length);
 		FATAL_IF0(r == NULL, "out of memory\n");
-		
+
 
 		q->buffers++;
 	} else {

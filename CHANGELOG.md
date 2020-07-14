@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Proper support for large files on certain 32bit OS's.
   Finally mktorrent properly handles files larger than 2Gb on 32bit Linux.
   Fixes for use on Windows under MinGW/Cygwin.
-  
+
 ## [0.6] - 2009-05-13
 ### Added
 - Support for multiple web seeds

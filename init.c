@@ -91,7 +91,7 @@ static void set_absolute_file_path(struct metafile *m)
 	/* allocate initial string */
 	string = malloc(length);
 	FATAL_IF0(string == NULL, "out of memory\n");
-	
+
 	/* while our allocated memory for the working dir isn't big enough */
 	while (getcwd(string, length) == NULL) {
 		/* double the buffer size */
@@ -141,7 +141,7 @@ static struct ll *get_slist(char *s)
 		/* set the commas to \0 so the URLs appear as
 		 * separate strings */
 		*e = '\0';
-		
+
 		FATAL_IF0(ll_append(list, s, 0) == NULL, "out of memory\n");
 
 		/* move s to point to the next URL */
@@ -184,11 +184,11 @@ static int is_dir(struct metafile *m, char *target)
 		strdup(target),
 		(uintmax_t) s.st_size
 	};
-	
+
 	FATAL_IF0(
 		fd.path == NULL || ll_append(m->file_list, &fd, sizeof(fd)) == NULL,
 		"out of memory\n");
-	
+
 	/* ..and size variable */
 	m->size = (uintmax_t) s.st_size;
 
@@ -305,18 +305,18 @@ static void print_help()
 static void print_announce_list(struct ll *list)
 {
 	unsigned int tier = 1;
-	
+
 	LL_FOR(node, list) {
-		
-		struct ll *inner_list = LL_DATA(node);	
-		
+
+		struct ll *inner_list = LL_DATA(node);
+
 		printf("    %u : %s\n",
 			tier, LL_DATA_AS(LL_HEAD(inner_list), const char*));
-		
+
 		LL_FOR_FROM(inner_node, LL_NEXT(LL_HEAD(inner_list))) {
 			printf("        %s\n", LL_DATA_AS(inner_node, const char*));
 		}
-		
+
 		tier += 1;
 	}
 }
@@ -332,7 +332,7 @@ static void print_web_seed_list(struct ll *list)
 		printf("none\n");
 		return;
 	}
-	
+
 	printf("%s\n", LL_DATA_AS(LL_HEAD(list), const char*));
 	LL_FOR_FROM(node, LL_NEXT(LL_HEAD(list))) {
 		printf("                %s\n", LL_DATA_AS(node, const char*));
@@ -430,10 +430,10 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 
 	m->announce_list = ll_new();
 	FATAL_IF0(m->announce_list == NULL, "out of memory\n");
-	
+
 	m->web_seed_list = ll_new();
 	FATAL_IF0(m->web_seed_list == NULL, "out of memory\n");
-	
+
 	m->file_list = ll_new();
 	FATAL_IF0(m->file_list == NULL, "out of memory\n");
 
@@ -545,7 +545,7 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 		if (file_tree_walk("." DIRSEP, MAX_OPENFD, process_node, m))
 			exit(EXIT_FAILURE);
 	}
-	
+
 	ll_sort(m->file_list, file_data_cmp_by_name);
 
 	/* calculate the number of pieces
@@ -562,10 +562,10 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 EXPORT void cleanup_metafile(struct metafile *m)
 {
 	ll_free(m->announce_list, free_inner_list);
-	
+
 	ll_free(m->file_list, file_data_clear);
-	
+
 	ll_free(m->web_seed_list, NULL);
-	
+
 	free(m->metainfo_file_path);
 }

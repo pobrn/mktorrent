@@ -81,7 +81,7 @@ static FILE *open_file(const char *path)
 	fd = open(path, O_WRONLY | O_BINARY | O_CREAT | O_EXCL,
 		       S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	FATAL_IF(fd < 0, "cannot create '%s': %s\n", path, strerror(errno));
-	
+
 	/* create the stream from this filedescriptor */
 	f = fdopen(fd, "wb");
 	FATAL_IF(f == NULL, "cannot create stream for '%s': %s\n",
@@ -143,10 +143,10 @@ int main(int argc, char *argv[])
 
 	/* and write the metainfo to file */
 	write_metainfo(file, &m, hash);
-	
+
 	/* close the file stream */
 	close_file(file);
-	
+
 	/* free allocated memory */
 	cleanup_metafile(&m);
 	free(hash);
