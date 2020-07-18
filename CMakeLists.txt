@@ -52,25 +52,25 @@ add_executable(mktorrent)
 target_sources(mktorrent
     PRIVATE
         # headers
-        export.h
-        ftw.h
-        hash.h
-        init.h
-        ll.h
-        mktorrent.h
-        msg.h
-        output.h
-        $<$<NOT:$<BOOL:${MKTORRENT_OPENSSL}>>:sha1.h>
+        src/export.h
+        src/ftw.h
+        src/hash.h
+        src/init.h
+        src/ll.h
+        src/mktorrent.h
+        src/msg.h
+        src/output.h
+        $<$<NOT:$<BOOL:${MKTORRENT_OPENSSL}>>:src/sha1.h>
 
         # sources
-        ftw.c
-        init.c
-        ll.c
-        main.c
-        msg.c
-        output.c
-        $<IF:$<BOOL:${MKTORRENT_PTHREADS}>,hash_pthreads.c,hash.c>
-        $<$<NOT:$<BOOL:${MKTORRENT_OPENSSL}>>:sha1.c>
+        src/ftw.c
+        src/init.c
+        src/ll.c
+        src/main.c
+        src/msg.c
+        src/output.c
+        $<IF:$<BOOL:${MKTORRENT_PTHREADS}>,src/hash_pthreads.c,src/hash.c>
+        $<$<NOT:$<BOOL:${MKTORRENT_OPENSSL}>>:src/sha1.c>
 )
 
 target_compile_features(mktorrent
