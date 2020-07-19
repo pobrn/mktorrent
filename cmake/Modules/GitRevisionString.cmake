@@ -6,7 +6,7 @@ function(make_git_revision_string _base_version _rev_version_output)
 
     set(_version "${_base_version}")
 
-    execute_process(COMMAND "git" "log" "--pretty=format:'%h'" "-n" "1"
+    execute_process(COMMAND "git" "rev-parse" "--short" "HEAD"
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         OUTPUT_VARIABLE GIT_REV
         ERROR_QUIET
@@ -14,21 +14,23 @@ function(make_git_revision_string _base_version _rev_version_output)
 
     if (NOT ("${GIT_REV}" STREQUAL ""))
         execute_process(
-            COMMAND bash -c "git diff --quiet --exit-code || echo ~dirty"
+            COMMAND "git" "diff" "--quiet" "--exit-code"
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-            OUTPUT_VARIABLE GIT_DIFF)
+            RESULTS_VARIABLE IS_WORKING_DIR_DIRTY)
         execute_process(
-            COMMAND git describe --exact-match --tags
+            COMMAND "git" "describe" "--exact-match" "--tags"
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
             OUTPUT_VARIABLE GIT_TAG ERROR_QUIET)
         execute_process(
-            COMMAND git rev-parse --abbrev-ref HEAD
+            COMMAND "git" "rev-parse" "--abbrev-ref" "HEAD"
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
             OUTPUT_VARIABLE GIT_BRANCH)
-
         string(STRIP "${GIT_REV}" GIT_REV)
         string(SUBSTRING "${GIT_REV}" 0 7 GIT_REV)
-        string(STRIP "${GIT_DIFF}" GIT_DIFF)
+        set(GIT_DIFF "")
+        if (IS_WORKING_DIR_DIRTY)
+            set(GIT_DIFF "~dirty")
+        endif()
         string(STRIP "${GIT_TAG}" GIT_TAG)
         string(STRIP "${GIT_BRANCH}" GIT_BRANCH)
 
