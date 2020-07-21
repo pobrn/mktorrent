@@ -71,15 +71,19 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 /*
  * create and open the metainfo file for writing and create a stream for it
  * we don't want to overwrite anything, so abort if the file is already there
+ * and force is false
  */
-static FILE *open_file(const char *path)
+static FILE *open_file(const char *path, int force)
 {
 	int fd;  /* file descriptor */
 	FILE *f; /* file stream */
 
+	int flags = O_WRONLY | O_BINARY | O_CREAT;
+	if (!force)
+		flags |= O_EXCL;
+
 	/* open and create the file if it doesn't exist already */
-	fd = open(path, O_WRONLY | O_BINARY | O_CREAT | O_EXCL,
-		       S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+	fd = open(path, flags, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	FATAL_IF(fd < 0, "cannot create '%s': %s\n", path, strerror(errno));
 
 	/* create the stream from this filedescriptor */
@@ -118,6 +122,7 @@ int main(int argc, char *argv[])
 		0,    /* private */
 		NULL, /* source string */
 		0,    /* verbose */
+		0,    /* force_overwrite */
 #ifdef USE_PTHREADS
 		0,    /* threads, initialised by init() */
 #endif
@@ -136,7 +141,7 @@ int main(int argc, char *argv[])
 
 	/* open the file stream now, so we don't have to abort
 	   _after_ we did all the hashing in case we fail */
-	file = open_file(m.metainfo_file_path);
+	file = open_file(m.metainfo_file_path, m.force_overwrite);
 
 	/* calculate hash string... */
 	unsigned char *hash = make_hash(&m);
