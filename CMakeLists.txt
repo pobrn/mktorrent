@@ -23,7 +23,6 @@ set(requiredOpenSSLVersion 1.1.1)
 include(FeatureSummary)
 include(OptionUtils)
 
-feature_option_setup(MKTORRENT_LARGE_FILES "Enable support for files and torrents > 2 GiB on certain OSes (like 32-bit Linux)" OFF)
 feature_option_setup(MKTORRENT_LONG_OPTIONS "Enable long options, started with two dashes" ON)
 feature_option_setup(MKTORRENT_NO_HASH_CHECK "Disable checking if amount of bytes read for file hashing matches initially reported sizes\n(useless unless, for some strange reason, you change files yet to be hashed while mktorrent is running)" OFF)
 feature_option_setup(MKTORRENT_OPENSSL "Use OpenSSL's SHA-1 implementation instead of compiling our own" ON)
@@ -82,11 +81,11 @@ target_compile_features(mktorrent
 
 target_compile_definitions(mktorrent
     PRIVATE
+        _FILE_OFFSET_BITS=64
         $<IF:$<BOOL:${MKTORRENT_USE_GITREV_VERSION}>,VERSION="${MKTORRENT_GITREV_VERSION}",VERSION="${MKTORRENT_PROJECT_VERSION}">
         $<$<BOOL:${MKTORRENT_PTHREADS}>:USE_PTHREADS>
         $<$<BOOL:${MKTORRENT_OPENSSL}>:USE_OPENSSL>
         $<$<BOOL:${MKTORRENT_LONG_OPTIONS}>:USE_LONG_OPTIONS>
-        $<$<BOOL:${MKTORRENT_LARGE_FILES}>:_LARGEFILE_SOURCE _FILE_OFFSET_BITS=64>
         $<$<BOOL:${MKTORRENT_NO_HASH_CHECK}>:NO_HASH_CHECK>
         $<IF:$<EQUAL:${MKTORRENT_MAX_OPENFD},100>,MAX_OPENFD=100,MAX_OPENFD=${MKTORRENT_MAX_OPENFD}>
         $<IF:$<EQUAL:${MKTORRENT_PROGRESS_PERIOD},200000>,PROGRESS_PERIOD=200000,PROGRESS_PERIOD=${MKTORRENT_PROGRESS_PERIOD}>

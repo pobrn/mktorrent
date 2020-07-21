@@ -29,7 +29,6 @@ Any option not specified will use its default value.
 
 | OPTION                       | DEFAULT | DESCRIPTION |
 |------------------------------|---------|-------------|
-| MKTORRENT_LARGE_FILES        | OFF     | Enable support for files and torrents > 2 GiB on certain OSes (like 32-bit Linux) |
 | MKTORRENT_LONG_OPTIONS       | ON      | Enable long options, started with two dashes |
 | MKTORRENT_NO_HASH_CHECK      | OFF     | Disable checking if amount of bytes read for file hashing matches initially reported sizes (useless unless, for some strange reason, you change files yet to be hashed while mktorrent is running) |
 | MKTORRENT_OPENSSL            | ON      | Use OpenSSL's SHA-1 implementation instead of compiling our own |
