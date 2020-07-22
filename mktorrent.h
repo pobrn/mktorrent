@@ -31,6 +31,7 @@ struct metafile {
 	int no_creation_date;      /* don't write the creation date */
 	int private;               /* set the private flag */
 	char *source;              /* set source for private trackers */
+	int cross_seed;            /* ensure info hash is unique for easier cross-seeding */
 	int verbose;               /* be verbose */
 	int force_overwrite;       /* overwrite existing output file */
 #ifdef USE_PTHREADS

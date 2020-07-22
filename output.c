@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <string.h>       /* strlen() etc. */
 #include <time.h>         /* time() */
 #include <inttypes.h>     /* PRIuMAX */
+#include <stdlib.h>       /* random() */
 
 #ifdef USE_OPENSSL
 #include <openssl/sha.h>  /* SHA_DIGEST_LENGTH */
@@ -178,6 +179,15 @@ EXPORT void write_metainfo(FILE *f, struct metafile *m, unsigned char *hash_stri
 			LL_DATA_AS(LL_HEAD(m->file_list), struct file_data*)->size);
 	else
 		write_file_list(f, m->file_list);
+
+	if (m->cross_seed) {
+		fprintf(f, "12:x_cross_seed%u:mktorrent-", CROSS_SEED_RAND_LENGTH * 2 + 10);
+		for (int i = 0; i < CROSS_SEED_RAND_LENGTH; i++) {
+			unsigned char rand_byte = random();
+			fputc("0123456789ABCDEF"[rand_byte >> 4], f);
+			fputc("0123456789ABCDEF"[rand_byte & 0x0F], f);
+		}
+	}
 
 	/* the info section also contains the name of the torrent,
 	   the piece length and the hash string */
