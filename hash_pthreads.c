@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <unistd.h>       /* read(), close() */
 #include <inttypes.h>     /* PRId64 etc. */
 #include <pthread.h>
+#include <time.h>         /* nanosleep() */
 
 #ifdef USE_OPENSSL
 #include <openssl/sha.h>  /* SHA1() */
@@ -169,6 +170,10 @@ static void *print_progress(void *data)
 {
 	struct queue *q = data;
 	int err;
+	struct timespec t;
+
+	t.tv_sec = PROGRESS_PERIOD / 1000000;
+	t.tv_nsec = PROGRESS_PERIOD % 1000000 * 1000;
 
 	err = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
 	FATAL_IF(err, "cannot set thread cancel type: %s\n", strerror(err));
@@ -178,7 +183,7 @@ static void *print_progress(void *data)
 		printf("\rHashed %u of %u pieces.", q->pieces_hashed, q->pieces);
 		fflush(stdout);
 		/* now sleep for PROGRESS_PERIOD microseconds */
-		usleep(PROGRESS_PERIOD);
+		nanosleep(&t, NULL);
 	}
 
 	return NULL;
