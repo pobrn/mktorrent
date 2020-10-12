@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
 	FILE *file;	/* stream for writing to the metainfo file */
 	struct metafile m = {
 		/* options */
-		18,   /* piece_length, 2^18 = 256kb by default */
+		0,   /* piece_length, 0 by default indicates length should be calculated automatically */
 		NULL, /* announce_list */
 		NULL, /* torrent_name */
 		NULL, /* metainfo_file_path */

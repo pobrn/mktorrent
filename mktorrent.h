@@ -9,6 +9,20 @@
 #define DIRSEP_CHAR '/'
 #endif
 
+/* number of bytes in one MB */
+#define ONEMEG		1048576
+
+/* max torrent size in MB for a given piece length in bits */
+/* where an X bit piece length equals a 2^X byte piece size */
+#define	BIT23MAX	12800
+#define	BIT22MAX	6400
+#define	BIT21MAX	3200
+#define	BIT20MAX	1600
+#define	BIT19MAX	800
+#define	BIT18MAX	400
+#define	BIT17MAX	200
+#define	BIT16MAX	100
+#define	BIT15MAX	50
 
 #include <stdint.h>
 
