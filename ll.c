@@ -118,7 +118,12 @@ EXPORT struct ll *ll_extend(struct ll *list, struct ll *other)
 	if (!other)
 		return list;
 
-	LL_NEXT(LL_TAIL(list)) = LL_HEAD(other);
+	if (!LL_IS_EMPTY(other)) {
+		LL_NEXT(LL_TAIL(list)) = LL_HEAD(other);
+		LL_PREV(LL_HEAD(other)) = LL_TAIL(list);
+		LL_TAIL(list) = LL_TAIL(other);
+	}
+
 
 	free(other);
 
