@@ -520,7 +520,7 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 		}
 	}
 
-	/* ..and a file or directory from which to create the torrent */
+	/* check that the user provided a file or directory from which to create the torrent */
 	FATAL_IF0(optind >= argc,
 		"must specify the contents, use -h for help\n");
 
@@ -576,7 +576,11 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 				m->piece_length = i;
 		if (m->piece_length == 0)
 			m->piece_length = num_piece_len_maxes;
-	}
+	} else {
+        /* if user did specify a piece length, verify its validity */
+        FATAL_IF0(m->piece_length < 15 || m->piece_length > 28,
+            "the piece length must be a number between 15 and 28.\n");
+    }
 
 	/* convert the piece length from power of 2 to an integer. */
 	m->piece_length = 1 << m->piece_length;
