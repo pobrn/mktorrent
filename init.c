@@ -575,7 +575,7 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 			if (m->size <= piece_len_maxes[i])
 				m->piece_length = i;
 		if (m->piece_length == 0)
-			m->piece_length = i;
+			m->piece_length = num_piece_len_maxes;
 	}
 
 	/* convert the piece length from power of 2 to an integer. */
