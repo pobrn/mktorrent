@@ -411,7 +411,7 @@ static void free_inner_list(void *data)
 EXPORT void init(struct metafile *m, int argc, char *argv[])
 {
 	int c;			/* return value of getopt() */
-	uintmax_t piece_len_maxes[] = {
+	const uintmax_t piece_len_maxes[] = {
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		(uintmax_t) BIT15MAX * ONEMEG, (uintmax_t) BIT16MAX * ONEMEG,
 		(uintmax_t) BIT17MAX * ONEMEG, (uintmax_t) BIT18MAX * ONEMEG,
@@ -420,7 +420,7 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 		(uintmax_t) BIT23MAX * ONEMEG
 	};
 
-	int num_piece_len_maxes = sizeof(piece_len_maxes) /
+	const int num_piece_len_maxes = sizeof(piece_len_maxes) /
 	    sizeof(piece_len_maxes[0]);
 
 #ifdef USE_LONG_OPTIONS
