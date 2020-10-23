@@ -567,7 +567,7 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 	ll_sort(m->file_list, file_data_cmp_by_name);
 
 	/* determine the piece length based on the torrent size if
-		it was not user specified. */
+	   it was not user specified. */
 	if (m->piece_length == 0) {
 		int i;
 		for (i = 15; i < num_piece_len_maxes &&
