@@ -260,7 +260,7 @@ static void print_help()
 	  "-f, --force                   : overwrite output file if it exists\n"
 	  "-h, --help                    : show this help screen\n"
 	  "-l, --piece-length=<n>        : set the piece length to 2^n bytes,\n"
-	  "                                default is 18, that is 2^18 = 256kb\n"
+	  "                                default is calculated from the total size\n"
 	  "-n, --name=<name>             : set the name of the torrent\n"
 	  "                                default is the basename of the target\n"
 	  "-o, --output=<filename>       : set the path and filename of the created file\n"
@@ -283,7 +283,7 @@ static void print_help()
 	  "-f                : overwrite output file if it exists\n"
 	  "-h                : show this help screen\n"
 	  "-l <n>            : set the piece length to 2^n bytes,\n"
-	  "                    default is 18, that is 2^18 = 256kb\n"
+	  "                    default is calculated from the total size\n"
 	  "-n <name>         : set the name of the torrent,\n"
 	  "                    default is the basename of the target\n"
 	  "-o <filename>     : set the path and filename of the created file\n"
@@ -411,6 +411,18 @@ static void free_inner_list(void *data)
 EXPORT void init(struct metafile *m, int argc, char *argv[])
 {
 	int c;			/* return value of getopt() */
+	const uintmax_t piece_len_maxes[] = {
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		(uintmax_t) BIT15MAX * ONEMEG, (uintmax_t) BIT16MAX * ONEMEG,
+		(uintmax_t) BIT17MAX * ONEMEG, (uintmax_t) BIT18MAX * ONEMEG,
+		(uintmax_t) BIT19MAX * ONEMEG, (uintmax_t) BIT20MAX * ONEMEG,
+		(uintmax_t) BIT21MAX * ONEMEG, (uintmax_t) BIT22MAX * ONEMEG,
+		(uintmax_t) BIT23MAX * ONEMEG
+	};
+
+	const int num_piece_len_maxes = sizeof(piece_len_maxes) /
+	    sizeof(piece_len_maxes[0]);
+
 #ifdef USE_LONG_OPTIONS
 	/* the option structure to pass to getopt_long() */
 	static struct option long_options[] = {
@@ -508,13 +520,7 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 		}
 	}
 
-	/* set the correct piece length.
-	   default is 2^18 = 256kb. */
-	FATAL_IF0(m->piece_length < 15 || m->piece_length > 28,
-		"the piece length must be a number between 15 and 28.\n");
-	m->piece_length = 1 << m->piece_length;
-
-	/* ..and a file or directory from which to create the torrent */
+	/* check that the user provided a file or directory from which to create the torrent */
 	FATAL_IF0(optind >= argc,
 		"must specify the contents, use -h for help\n");
 
@@ -559,6 +565,25 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 	}
 
 	ll_sort(m->file_list, file_data_cmp_by_name);
+
+	/* determine the piece length based on the torrent size if
+	   it was not user specified. */
+	if (m->piece_length == 0) {
+		int i;
+		for (i = 15; i < num_piece_len_maxes &&
+			m->piece_length == 0; i++)
+			if (m->size <= piece_len_maxes[i])
+				m->piece_length = i;
+		if (m->piece_length == 0)
+			m->piece_length = num_piece_len_maxes;
+	} else {
+		/* if user did specify a piece length, verify its validity */
+		FATAL_IF0(m->piece_length < 15 || m->piece_length > 28,
+			"the piece length must be a number between 15 and 28.\n");
+	}
+
+	/* convert the piece length from power of 2 to an integer. */
+	m->piece_length = 1 << m->piece_length;
 
 	/* calculate the number of pieces
 	   pieces = ceil( size / piece_length ) */
