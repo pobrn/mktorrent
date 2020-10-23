@@ -566,8 +566,8 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 
 	ll_sort(m->file_list, file_data_cmp_by_name);
 
-    /* determine the piece length based on the torrent size if
-	   it was not user specified. */
+	/* determine the piece length based on the torrent size if
+		it was not user specified. */
 	if (m->piece_length == 0) {
 		int i;
 		for (i = 15; i < num_piece_len_maxes &&
@@ -577,10 +577,10 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 		if (m->piece_length == 0)
 			m->piece_length = num_piece_len_maxes;
 	} else {
-        /* if user did specify a piece length, verify its validity */
-        FATAL_IF0(m->piece_length < 15 || m->piece_length > 28,
-            "the piece length must be a number between 15 and 28.\n");
-    }
+		/* if user did specify a piece length, verify its validity */
+		FATAL_IF0(m->piece_length < 15 || m->piece_length > 28,
+			"the piece length must be a number between 15 and 28.\n");
+	}
 
 	/* convert the piece length from power of 2 to an integer. */
 	m->piece_length = 1 << m->piece_length;
