@@ -125,6 +125,7 @@ int main(int argc, char *argv[])
 		0,    /* cross_seed */
 		0,    /* verbose */
 		0,    /* force_overwrite */
+		NULL, /* exclude_list */
 #ifdef USE_PTHREADS
 		0,    /* threads, initialised by init() */
 #endif
