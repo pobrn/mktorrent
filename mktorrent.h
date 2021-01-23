@@ -48,6 +48,7 @@ struct metafile {
 	int cross_seed;            /* ensure info hash is unique for easier cross-seeding */
 	int verbose;               /* be verbose */
 	int force_overwrite;       /* overwrite existing output file */
+	struct ll *exclude_list;   /* exclude list */
 #ifdef USE_PTHREADS
 	long threads;              /* number of threads used for hashing */
 #endif
