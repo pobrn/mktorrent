@@ -27,7 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <unistd.h>
 #include <dirent.h>
 #include <stdbool.h>
-#include <glob.h>
+#include <fnmatch.h>
 
 #include "export.h"
 #include "mktorrent.h" /* DIRSEP_CHAR */
@@ -111,7 +111,7 @@ static unsigned int dir_state_close(struct dir_state *ds)
 	return 0;
 }
 
-static unsigned int cleanup(struct dir_state *ds, char *path, struct ll *exclude_list, int ret)
+static unsigned int cleanup(struct dir_state *ds, char *path, int ret)
 {
 	while (ds->prev)
 		ds = ds->prev;
@@ -124,9 +124,6 @@ static unsigned int cleanup(struct dir_state *ds, char *path, struct ll *exclude
 
 	if (path)
 		free(path);
-
-	if( exclude_list )
-		ll_free(exclude_list, NULL);
 
 	return ret;
 }
@@ -149,7 +146,7 @@ EXPORT int file_tree_walk(const char *dirname, unsigned int nfds,
 	path = malloc(path_size);
 	if (path == NULL) {
 		fprintf(stderr, "fatal error: out of memory\n");
-		return cleanup(ds, NULL, NULL, -1);
+		return cleanup(ds, NULL, -1);
 	}
 	path_max = path + path_size;
 
@@ -164,7 +161,7 @@ EXPORT int file_tree_walk(const char *dirname, unsigned int nfds,
 			new_path = realloc(path, 2*path_size);
 			if (new_path == NULL) {
 				fprintf(stderr, "fatal error: out of memory\n");
-				return cleanup(ds, path, NULL, -1);
+				return cleanup(ds, path, -1);
 			}
 			end = new_path + path_size;
 			path_size *= 2;
@@ -180,28 +177,12 @@ EXPORT int file_tree_walk(const char *dirname, unsigned int nfds,
 	}
 
 	if (dir_state_open(ds, path, end - path))
-		return cleanup(ds, path, NULL, -1);
+		return cleanup(ds, path, -1);
 
 	first_open = ds;
 	nopen = 1;
 
 	*end = DIRSEP_CHAR;
-
-	struct ll *exclude_file_list = ll_new();
-	FATAL_IF0(exclude_file_list == NULL, "out of memory\n");
-
-	LL_FOR(tier_node, m->exclude_list) {
-		LL_FOR(exclude_node, LL_DATA_AS(tier_node, struct ll*)) {
-			const char *exclude_glob = LL_DATA_AS(exclude_node, const char*);
-			glob_t globbuf;
-
-			if( glob(exclude_glob, 0, NULL, &globbuf) == 0 ) {
-				for(size_t i=0; i<globbuf.gl_pathc; ++i) {
-					ll_append(exclude_file_list, globbuf.gl_pathv[i], 0);
-				}
-			}
-		}
-	}
 
 	while (1) {
 		struct dirent *de = readdir(ds->dir);
@@ -217,14 +198,16 @@ EXPORT int file_tree_walk(const char *dirname, unsigned int nfds,
 					&& de->d_name[2] == '\0'))) {
 				continue;
 			}
-			
+					
 			bool should_skip = false;
-			LL_FOR(exclude_file_node, exclude_file_list) {
-				const char *exclude_file = LL_DATA_AS(exclude_file_node, const char*);
-				if(strncmp(de->d_name, exclude_file, strlen(exclude_file)) == 0 ) {
-					if(m->verbose)
-						printf("skipping %s\n", de->d_name);
-					should_skip = true;
+			LL_FOR(tier_node, m->exclude_list) {
+				LL_FOR(exclude_node, LL_DATA_AS(tier_node, struct ll*)) {
+					const char *exclude_pattern = LL_DATA_AS(exclude_node, const char*);
+					if (fnmatch(exclude_pattern, de->d_name, 0) != FNM_NOMATCH) {
+						if (m->verbose)
+							printf("skipping %s\n", de->d_name);
+						should_skip = true;
+					}
 				}
 			}
 
@@ -242,7 +225,7 @@ EXPORT int file_tree_walk(const char *dirname, unsigned int nfds,
 					new_path = realloc(path, 2*path_size);
 					if (new_path == NULL) {
 						fprintf(stderr, "fatal error: out of memory\n");
-						return cleanup(ds, path, exclude_file_list, -1);
+						return cleanup(ds, path, -1);
 					}
 					end = new_path + path_size;
 					path_size *= 2;
@@ -254,29 +237,29 @@ EXPORT int file_tree_walk(const char *dirname, unsigned int nfds,
 			if (stat(path, &sbuf)) {
 				fprintf(stderr, "fatal error: cannot stat '%s': %s\n",
 						path, strerror(errno));
-				return cleanup(ds, path, exclude_file_list, -1);
+				return cleanup(ds, path, -1);
 			}
 
 			r = callback(path, &sbuf, data);
 			if (r)
-				return cleanup(ds, path, exclude_file_list, r);
+				return cleanup(ds, path, r);
 
 			if (S_ISDIR(sbuf.st_mode)) {
 				if (ds->next == NULL &&
 					(ds->next = dir_state_new(ds, NULL)) == NULL)
-					return cleanup(ds, path, exclude_file_list, -1);
+					return cleanup(ds, path, -1);
 
 				ds = ds->next;
 
 				if (nopen == nfds) {
 					if (dir_state_close(first_open))
-						return cleanup(ds, path, exclude_file_list, -1);
+						return cleanup(ds, path, -1);
 					first_open = first_open->next;
 					nopen--;
 				}
 
 				if (dir_state_open(ds, path, end - path))
-					return cleanup(ds, path, exclude_file_list, -1);
+					return cleanup(ds, path, -1);
 
 				nopen++;
 
@@ -287,7 +270,7 @@ EXPORT int file_tree_walk(const char *dirname, unsigned int nfds,
 				path[ds->length] = '\0';
 				fprintf(stderr, "fatal error: cannot close '%s': %s\n",
 					path, strerror(errno));
-				return cleanup(ds, path, exclude_file_list, -1);
+				return cleanup(ds, path, -1);
 			}
 
 			if (ds->prev == NULL)
@@ -298,12 +281,12 @@ EXPORT int file_tree_walk(const char *dirname, unsigned int nfds,
 
 			if (ds->dir == NULL) {
 				if (dir_state_reopen(ds, path))
-					return cleanup(ds, path, exclude_file_list, -1);
+					return cleanup(ds, path, -1);
 				first_open = ds;
 				nopen++;
 			}
 		}
 	}
 
-	return cleanup(ds, path, exclude_file_list, 0);
+	return cleanup(ds, path, 0);
 }
