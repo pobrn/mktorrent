@@ -200,20 +200,19 @@ EXPORT int file_tree_walk(const char *dirname, unsigned int nfds,
 			}
 
 			bool should_skip = false;
-			LL_FOR(tier_node, m->exclude_list) {
-				LL_FOR(exclude_node, LL_DATA_AS(tier_node, struct ll*)) {
-					const char *exclude_pattern = LL_DATA_AS(exclude_node, const char*);
-					if (fnmatch(exclude_pattern, de->d_name, 0) != FNM_NOMATCH) {
-						if (m->verbose)
-							printf("skipping %s\n", de->d_name);
-						should_skip = true;
-					}
+			LL_FOR(exclude_node, m->exclude_list) {
+				const char *exclude_pattern = LL_DATA(exclude_node);
+				if (fnmatch(exclude_pattern, de->d_name, 0) != FNM_NOMATCH) {
+					if (m->verbose)
+						printf("skipping %s\n", de->d_name);
+					should_skip = true;
+					break;
 				}
 			}
-
-			if(should_skip)
+			
+			if (should_skip)
 				continue;
-
+			
 			end = path + ds->length + 1;
 			p = de->d_name;
 			while ((*end = *p)) {

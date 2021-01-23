@@ -489,9 +489,7 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 			m->no_creation_date = 1;
 			break;
 		case 'e':
-			FATAL_IF0(
-				ll_append(m->exclude_list, get_slist(optarg), 0) == NULL,
-				"out of memory\n");
+			ll_extend(m->exclude_list, get_slist(optarg));
 			break;
 		case 'f':
 			m->force_overwrite = 1;
@@ -617,7 +615,7 @@ EXPORT void cleanup_metafile(struct metafile *m)
 
 	ll_free(m->web_seed_list, NULL);
 
-	ll_free(m->exclude_list, free_inner_list);
+	ll_free(m->exclude_list, NULL);
 
 	free(m->metainfo_file_path);
 }
