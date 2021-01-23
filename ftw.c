@@ -198,7 +198,7 @@ EXPORT int file_tree_walk(const char *dirname, unsigned int nfds,
 					&& de->d_name[2] == '\0'))) {
 				continue;
 			}
-					
+
 			bool should_skip = false;
 			LL_FOR(tier_node, m->exclude_list) {
 				LL_FOR(exclude_node, LL_DATA_AS(tier_node, struct ll*)) {
