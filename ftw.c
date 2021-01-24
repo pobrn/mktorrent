@@ -32,7 +32,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include "export.h"
 #include "mktorrent.h" /* DIRSEP_CHAR */
 #include "ftw.h"
-#include "msg.h"
 
 
 struct dir_state {
