@@ -257,6 +257,8 @@ static void print_help()
 	  "                                additional -a adds backup trackers\n"
 	  "-c, --comment=<comment>       : add a comment to the metainfo\n"
 	  "-d, --no-date                 : don't write the creation date\n"
+	  "-e, --exclude=<pat>[,<pat>]*  : exclude files whose name matches the pattern <pat>\n"
+	  "                                see the man page glob(7)\n"
 	  "-f, --force                   : overwrite output file if it exists\n"
 	  "-h, --help                    : show this help screen\n"
 	  "-l, --piece-length=<n>        : set the piece length to 2^n bytes,\n"
@@ -280,6 +282,8 @@ static void print_help()
 	  "                    additional -a adds backup trackers\n"
 	  "-c <comment>      : add a comment to the metainfo\n"
 	  "-d                : don't write the creation date\n"
+	  "-e <pat>[,<pat>]* : exclude files whose name matches the pattern <pat>\n"
+	  "                    see the man page glob(7)\n"
 	  "-f                : overwrite output file if it exists\n"
 	  "-h                : show this help screen\n"
 	  "-l <n>            : set the piece length to 2^n bytes,\n"
@@ -429,6 +433,7 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 		{"announce", 1, NULL, 'a'},
 		{"comment", 1, NULL, 'c'},
 		{"no-date", 0, NULL, 'd'},
+		{"exclude", 1, NULL, 'e'},
 		{"force", 0, NULL, 'f'},
 		{"help", 0, NULL, 'h'},
 		{"piece-length", 1, NULL, 'l'},
@@ -455,11 +460,14 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 	m->file_list = ll_new();
 	FATAL_IF0(m->file_list == NULL, "out of memory\n");
 
+	m->exclude_list = ll_new();
+	FATAL_IF0(m->exclude_list == NULL, "out of memory\n");
+
 	/* now parse the command line options given */
 #ifdef USE_PTHREADS
-#define OPT_STRING "a:c:dfhl:n:o:ps:t:vw:x"
+#define OPT_STRING "a:c:e:dfhl:n:o:ps:t:vw:x"
 #else
-#define OPT_STRING "a:c:dfhl:n:o:ps:vw:x"
+#define OPT_STRING "a:c:e:dfhl:n:o:ps:vw:x"
 #endif
 #ifdef USE_LONG_OPTIONS
 	while ((c = getopt_long(argc, argv, OPT_STRING,
@@ -479,6 +487,9 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 			break;
 		case 'd':
 			m->no_creation_date = 1;
+			break;
+		case 'e':
+			ll_extend(m->exclude_list, get_slist(optarg));
 			break;
 		case 'f':
 			m->force_overwrite = 1;
@@ -603,6 +614,8 @@ EXPORT void cleanup_metafile(struct metafile *m)
 	ll_free(m->file_list, file_data_clear);
 
 	ll_free(m->web_seed_list, NULL);
+
+	ll_free(m->exclude_list, NULL);
 
 	free(m->metainfo_file_path);
 }

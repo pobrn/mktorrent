@@ -26,6 +26,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #include <sys/stat.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <stdbool.h>
+#include <fnmatch.h>
 
 #include "export.h"
 #include "mktorrent.h" /* DIRSEP_CHAR */
@@ -135,6 +137,7 @@ EXPORT int file_tree_walk(const char *dirname, unsigned int nfds,
 	struct dir_state *ds = dir_state_new(NULL, NULL);
 	struct dir_state *first_open;
 	unsigned int nopen;
+	struct metafile *m = data;
 
 	if (ds == NULL)
 		return -1;
@@ -192,6 +195,21 @@ EXPORT int file_tree_walk(const char *dirname, unsigned int nfds,
 					&& (de->d_name[1] == '\0'
 					|| (de->d_name[1] == '.'
 					&& de->d_name[2] == '\0'))) {
+				continue;
+			}
+
+			bool should_skip = false;
+			LL_FOR(exclude_node, m->exclude_list) {
+				const char *exclude_pattern = LL_DATA(exclude_node);
+				if (fnmatch(exclude_pattern, de->d_name, 0) != FNM_NOMATCH) {
+					should_skip = true;
+					break;
+				}
+			}
+
+			if (should_skip) {
+				if (m->verbose)
+					printf("skipping %s\n", de->d_name);
 				continue;
 			}
 
