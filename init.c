@@ -278,7 +278,7 @@ static void print_help()
 	  "                                additional -w adds more URLs\n"
 	  "-x, --cross-seed              : ensure info hash is unique for easier cross-seeding\n"
 #else
-	  "-a <url>[,<url>]* : sdpecify the full announce URLs\n"
+	  "-a <url>[,<url>]* : specify the full announce URLs\n"
 	  "                    additional -a adds backup trackers\n"
 	  "-c <comment>      : add a comment to the metainfo\n"
 	  "-d                : don't write the creation date\n"
