@@ -206,13 +206,13 @@ EXPORT int file_tree_walk(const char *dirname, unsigned int nfds,
 					break;
 				}
 			}
-			
+
 			if (should_skip) {
 				if (m->verbose)
 					printf("skipping %s\n", de->d_name);
 				continue;
 			}
-			
+
 			end = path + ds->length + 1;
 			p = de->d_name;
 			while ((*end = *p)) {
