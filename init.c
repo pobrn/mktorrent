@@ -282,7 +282,7 @@ static void print_help()
 	  "                    additional -a adds backup trackers\n"
 	  "-c <comment>      : add a comment to the metainfo\n"
 	  "-d                : don't write the creation date\n"
-	  "-e <pat>          : exclude files whose name matches the pattern <pat>\n"
+	  "-e <pat>[,<pat>]* : exclude files whose name matches the pattern <pat>\n"
 	  "                    see the man page glob(7)\n"
 	  "-f                : overwrite output file if it exists\n"
 	  "-h                : show this help screen\n"
