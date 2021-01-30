@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   torrents. Having this option in mktorrent make it possible to create a
   infohash accurate torrent to the tracker you want to upload it to
 ### Changed
-- Make`-a` (announce list) optional
+- Make `-a` (announce list) optional
 - Optional announce URL even for private torrents. No need to require announce
   for private torrents, they are added by most private trackers anyway and they
   modify the infohash so you'd have to redownload their modified torrent with
