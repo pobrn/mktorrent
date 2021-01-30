@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 ### Added
+- `-e`/`--exclude` option to exclude files/directories based on `glob(7)` patterns. ([#56](https://github.com/pobrn/mktorrent/pull/56))
+- Automatic piece length calculation. ([#55](https://github.com/pobrn/mktorrent/pull/55))
 - `CHANGELOG.md`
 
 ## [1.1] - 2017-01-11
