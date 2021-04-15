@@ -14,6 +14,13 @@ project(mktorrent
 include(DefaultBuildType)
 default_build_type_config("Release")
 
+get_property(isMultiConfig GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+if(isMultiConfig)
+    set(MKTORRENT_BUILD_CONFIG "$<CONFIG>")
+else()
+    set(MKTORRENT_BUILD_CONFIG "${CMAKE_BUILD_TYPE}")
+endif()
+
 # use CONFIG mode first in find_package
 set(CMAKE_FIND_PACKAGE_PREFER_CONFIG ON)
 # dependency version requirements
@@ -89,6 +96,7 @@ target_compile_definitions(mktorrent
         $<$<BOOL:${MKTORRENT_NO_HASH_CHECK}>:NO_HASH_CHECK>
         $<IF:$<EQUAL:${MKTORRENT_MAX_OPENFD},100>,MAX_OPENFD=100,MAX_OPENFD=${MKTORRENT_MAX_OPENFD}>
         $<IF:$<EQUAL:${MKTORRENT_PROGRESS_PERIOD},200000>,PROGRESS_PERIOD=200000,PROGRESS_PERIOD=${MKTORRENT_PROGRESS_PERIOD}>
+        BUILD_CFG="${MKTORRENT_BUILD_CONFIG}"
 )
 
 target_compile_options(mktorrent
