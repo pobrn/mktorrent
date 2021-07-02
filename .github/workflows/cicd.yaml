@@ -8,7 +8,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-20.04, ubuntu-18.04, windows-2019, macos-10.15]
+        os: [ubuntu-20.04, ubuntu-18.04, windows-2019, macos-11, macos-10.15]
         openssl: ["ON", "OFF"]
         pthreads: ["ON", "OFF"]
       fail-fast: false
@@ -17,28 +17,27 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2.3.1
+      uses: actions/checkout@v2
 
-    - name: Windows - setup MSYS2/MinGW
+    - name: Windows - setup MSYS2/UCRT64
       if: matrix.os == 'windows-2019'
       uses: msys2/setup-msys2@v2
       with:
         release: true
-        msystem: MINGW64
+        msystem: UCRT64
         update: true
         install: >-
             git
-            mingw64/mingw-w64-x86_64-ninja
-            mingw64/mingw-w64-x86_64-cmake
-            mingw64/mingw-w64-x86_64-headers-git
-            mingw64/mingw-w64-x86_64-gcc
-            mingw64/mingw-w64-x86_64-openssl
+            ucrt64/mingw-w64-ucrt-x86_64-toolchain
+            ucrt64/mingw-w64-ucrt-x86_64-ninja
+            ucrt64/mingw-w64-ucrt-x86_64-cmake
+            ucrt64/mingw-w64-ucrt-x86_64-openssl
 
     # statically link OpenSSL on macOS CI/CD binaries
     - name: macOS - setup OpenSSL
       if: matrix.os == 'macos-10.15'
       run: |
-        echo "OPENSSL_ROOT_DIR=/usr/local/opt/openssl@1.1" >> $GITHUB_ENV
+        echo "OPENSSL_ROOT_DIR=/usr/local/opt/openssl" >> $GITHUB_ENV
         echo "MACOS_STATIC_OPENSSL=-DOPENSSL_USE_STATIC_LIBS=ON" >> $GITHUB_ENV
 
     - name: Linux, macOS - build
@@ -47,7 +46,7 @@ jobs:
         cmake -S . -B build $MACOS_STATIC_OPENSSL -DMKTORRENT_LONG_OPTIONS=ON -DMKTORRENT_PTHREADS=${{ matrix.pthreads }} -DMKTORRENT_OPENSSL=${{ matrix.openssl }} -DMKTORRENT_USE_GITREV_VERSION=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --graphviz=build/target_graph.dot
         cmake --build build
 
-    - name: Windows - build with MSYS2/MinGW64
+    - name: Windows - build with MSYS2/UCRT64
       if: matrix.os == 'windows-2019'
       shell: msys2 {0}
       run: |
@@ -61,7 +60,7 @@ jobs:
         echo "MKTORRENT_SHORT_HASH=$short_hash" >> $GITHUB_ENV
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v2.1.0
+      uses: actions/upload-artifact@v2
       with:
         name: mktorrent-${{ env.MKTORRENT_SHORT_HASH }}_${{ matrix.os }}_openssl-${{ matrix.openssl }}_pthreads-${{ matrix.pthreads }}
         path: |
