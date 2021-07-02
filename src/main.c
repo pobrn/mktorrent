@@ -68,6 +68,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #define S_IROTH 0
 #endif
 
+#ifndef VERSION
+#define VERSION "unspecified_version"
+#endif
+
+#ifndef BUILD_CFG
+#define BUILD_CFG "unspecified_build_type"
+#endif
 
 /*
  * create and open the metainfo file for writing and create a stream for it
@@ -136,8 +143,31 @@ int main(int argc, char *argv[])
 		0     /* pieces */
 	};
 
-	/* print who we are */
-	printf("mktorrent " VERSION " (c) 2007, 2009 Emil Renner Berthing\n\n");
+	/* print information about the program and its build features/configuration */
+	printf("mktorrent " VERSION " (c) 2007, 2009 Emil Renner Berthing\n\n"
+	  "Built in " BUILD_CFG " configuration with the following features:\n\n"
+#ifdef USE_LONG_OPTIONS
+	  "MKTORRENT_LONG_OPTIONS       ON\n"
+#else
+	  "MKTORRENT_LONG_OPTIONS       OFF\n"
+#endif
+#ifdef NO_HASH_CHECK
+	  "MKTORRENT_NO_HASH_CHECK      ON\n"
+#else
+	  "MKTORRENT_NO_HASH_CHECK      OFF\n"
+#endif
+#ifdef USE_OPENSSL
+	  "MKTORRENT_OPENSSL            ON\n"
+#else
+	  "MKTORRENT_OPENSSL            OFF\n"
+#endif
+#ifdef USE_PTHREADS
+	  "MKTORRENT_PTHREADS           ON\n"
+#else
+	  "MKTORRENT_PTHREADS           OFF\n"
+#endif
+	  "MKTORRENT_MAX_OPENFD         " "%d" "\n"
+	  "MKTORRENT_PROGRESS_PERIOD    " "%d" "\n\n", MAX_OPENFD, PROGRESS_PERIOD);
 
 	/* seed PRNG with current time */
 	struct timespec ts;

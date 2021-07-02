@@ -42,11 +42,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #define O_BINARY 0
 #endif
 
-#if defined _LARGEFILE_SOURCE && defined O_LARGEFILE
-#define OPENFLAGS (O_RDONLY | O_BINARY | O_LARGEFILE)
-#else
 #define OPENFLAGS (O_RDONLY | O_BINARY)
-#endif
 
 
 /*
