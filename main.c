@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
 	};
 
 	/* print who we are */
-	printf("mktorrent " VERSION " (c) 2007, 2009 Emil Renner Berthing\n\n");
+	printf("mktorrent " VERSION " (c) 2009 Merevial - DarkNet Hackware\n\n");
 
 	/* seed PRNG with current time */
 	struct timespec ts;
