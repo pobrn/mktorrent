@@ -43,6 +43,7 @@ struct metafile {
 	struct ll *web_seed_list;  /* web seed URLs */
 	int target_is_directory;   /* target is a directory */
 	int no_creation_date;      /* don't write the creation date */
+	int no_created_by;         /* don't write the creating software */
 	int private;               /* set the private flag */
 	char *source;              /* set source for private trackers */
 	int cross_seed;            /* ensure info hash is unique for easier cross-seeding */

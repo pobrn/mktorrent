@@ -163,7 +163,8 @@ EXPORT void write_metainfo(FILE *f, struct metafile *m, unsigned char *hash_stri
 				(unsigned long)strlen(m->comment),
 				m->comment);
 	/* I made this! */
-	fprintf(f, "10:created by13:mktorrent " VERSION);
+	if (!m->no_created_by)
+		fprintf(f, "10:created by13:mktorrent " VERSION);
 	/* add the creation date */
 	if (!m->no_creation_date)
 		fprintf(f, "13:creation datei%lde",

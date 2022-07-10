@@ -257,6 +257,7 @@ static void print_help()
 	  "                                additional -a adds backup trackers\n"
 	  "-c, --comment=<comment>       : add a comment to the metainfo\n"
 	  "-d, --no-date                 : don't write the creation date\n"
+	  "-D, --no-created-by           : don't write the creating software name and version\n"
 	  "-e, --exclude=<pat>[,<pat>]*  : exclude files whose name matches the pattern <pat>\n"
 	  "                                see the man page glob(7)\n"
 	  "-f, --force                   : overwrite output file if it exists\n"
@@ -376,6 +377,12 @@ static void dump_options(struct metafile *m)
 	else
 		printf("yes\n");
 
+	printf("  Write created_by:   ");
+	if (m->no_created_by)
+		printf("no\n");
+	else
+		printf("yes\n");
+
 	print_web_seed_list(m->web_seed_list);
 
 	/* Print source string only if set */
@@ -433,6 +440,7 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 		{"announce", 1, NULL, 'a'},
 		{"comment", 1, NULL, 'c'},
 		{"no-date", 0, NULL, 'd'},
+		{"no-created-by", 0, NULL, 'D'},
 		{"exclude", 1, NULL, 'e'},
 		{"force", 0, NULL, 'f'},
 		{"help", 0, NULL, 'h'},
@@ -465,9 +473,9 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 
 	/* now parse the command line options given */
 #ifdef USE_PTHREADS
-#define OPT_STRING "a:c:e:dfhl:n:o:ps:t:vw:x"
+#define OPT_STRING "a:c:e:dDfhl:n:o:ps:t:vw:x"
 #else
-#define OPT_STRING "a:c:e:dfhl:n:o:ps:vw:x"
+#define OPT_STRING "a:c:e:dDfhl:n:o:ps:vw:x"
 #endif
 #ifdef USE_LONG_OPTIONS
 	while ((c = getopt_long(argc, argv, OPT_STRING,
@@ -487,6 +495,9 @@ EXPORT void init(struct metafile *m, int argc, char *argv[])
 			break;
 		case 'd':
 			m->no_creation_date = 1;
+			break;
+		case 'D':
+			m->no_created_by = 1;
 			break;
 		case 'e':
 			ll_extend(m->exclude_list, get_slist(optarg));

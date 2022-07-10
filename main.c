@@ -120,6 +120,7 @@ int main(int argc, char *argv[])
 		NULL, /* comment */
 		0,    /* target_is_directory  */
 		0,    /* no_creation_date */
+		0,    /* no_created_by */
 		0,    /* private */
 		NULL, /* source string */
 		0,    /* cross_seed */
